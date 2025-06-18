@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=east": {
+      "model": "regen:block/spell_inscriber",
+      "y": 90
+    },
+    "facing=north": {
+      "model": "regen:block/spell_inscriber"
+    },
+    "facing=south": {
+      "model": "regen:block/spell_inscriber",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "regen:block/spell_inscriber",
+      "y": 270
+    }
+  }
+}

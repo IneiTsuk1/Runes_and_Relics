@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "id": "regen",
+  "version": "${version}",
+  "name": "Regen",
+  "description": "",
+  "authors": ["IneiTsuki"],
+  "contact": {},
+  "license": "MIT",
+  "icon": "assets/regen/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "fabric-datagen": [
+      "net.IneiTsuki.regen.RegenDataGenerator"
+    ],
+    "client": [
+      "net.IneiTsuki.regen.client.RegenClient"
+    ],
+    "main": [
+      "net.IneiTsuki.regen.Regen"
+    ]
+  },
+  "mixins": [
+    "regen.mixins.json",
+    {
+      "config": "regen.client.mixins.json",
+      "environment": "client"
+    }
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric": "*",
+    "minecraft": "${minecraft_version}"
+  }
+}

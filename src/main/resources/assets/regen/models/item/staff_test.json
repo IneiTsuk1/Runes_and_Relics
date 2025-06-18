@@ -1,0 +1,87 @@
+{
+	"credit": "Made with Blockbench",
+	"textures": {
+		"0": "regen:item/staff_test/staff_test",
+		"particle": "regen:item/staff_test/staff_test"
+	},
+	"elements": [
+		{
+			"name": "Handle_bottom",
+			"from": [8, 1, 8],
+			"to": [9, 3, 9],
+			"rotation": {"angle": -22.5, "axis": "x", "origin": [8, 2, 9]},
+			"faces": {
+				"north": {"uv": [5, 2, 6, 4], "texture": "#0"},
+				"east": {"uv": [5, 4, 6, 6], "texture": "#0"},
+				"south": {"uv": [6, 0, 7, 2], "texture": "#0"},
+				"west": {"uv": [6, 2, 7, 4], "texture": "#0"},
+				"up": {"uv": [9, 1, 8, 0], "texture": "#0"},
+				"down": {"uv": [9, 1, 8, 2], "texture": "#0"}
+			}
+		},
+		{
+			"name": "Handle",
+			"from": [8, 2, 7.5],
+			"to": [9, 11, 8.5],
+			"rotation": {"angle": 0, "axis": "y", "origin": [9.14645, 6.5, 8]},
+			"faces": {
+				"north": {"uv": [0, 0, 1, 9], "texture": "#0"},
+				"east": {"uv": [1, 0, 2, 9], "texture": "#0"},
+				"south": {"uv": [2, 0, 3, 9], "texture": "#0"},
+				"west": {"uv": [3, 0, 4, 9], "texture": "#0"},
+				"up": {"uv": [9, 3, 8, 2], "texture": "#0"},
+				"down": {"uv": [9, 3, 8, 4], "texture": "#0"}
+			}
+		},
+		{
+			"name": "Curve_Bottom",
+			"from": [8, 11, 6],
+			"to": [9, 12, 8],
+			"rotation": {"angle": 22.5, "axis": "x", "origin": [9, 12, 7]},
+			"faces": {
+				"north": {"uv": [8, 4, 9, 5], "texture": "#0"},
+				"east": {"uv": [4, 6, 6, 7], "texture": "#0"},
+				"south": {"uv": [8, 5, 9, 6], "texture": "#0"},
+				"west": {"uv": [6, 4, 8, 5], "texture": "#0"},
+				"up": {"uv": [7, 7, 6, 5], "texture": "#0"},
+				"down": {"uv": [8, 0, 7, 2], "texture": "#0"}
+			}
+		},
+		{
+			"name": "Curve_Middle",
+			"from": [8, 13.5, 6.5],
+			"to": [9, 15.5, 7.5],
+			"rotation": {"angle": 45, "axis": "x", "origin": [8.29289, 15, 7]},
+			"faces": {
+				"north": {"uv": [7, 2, 8, 4], "texture": "#0"},
+				"east": {"uv": [4, 7, 5, 9], "texture": "#0"},
+				"south": {"uv": [5, 7, 6, 9], "texture": "#0"},
+				"west": {"uv": [7, 5, 8, 7], "texture": "#0"},
+				"up": {"uv": [7, 9, 6, 8], "texture": "#0"},
+				"down": {"uv": [9, 6, 8, 7], "texture": "#0"}
+			}
+		},
+		{
+			"name": "Curve_Top",
+			"from": [8, 12, 5.5],
+			"to": [9, 14, 6.5],
+			"rotation": {"angle": 0, "axis": "z", "origin": [9, 13, 6]},
+			"faces": {
+				"north": {"uv": [4, 0, 5, 2], "texture": "#0"},
+				"east": {"uv": [4, 2, 5, 4], "texture": "#0"},
+				"south": {"uv": [4, 4, 5, 6], "texture": "#0"},
+				"west": {"uv": [5, 0, 6, 2], "texture": "#0"},
+				"up": {"uv": [7, 8, 6, 7], "texture": "#0"},
+				"down": {"uv": [8, 7, 7, 8], "texture": "#0"}
+			}
+		}
+	],
+	"groups": [
+		{
+			"name": "staff",
+			"origin": [0, 0, 0],
+			"color": 0,
+			"children": [0, 1, 2, 3, 4]
+		}
+	]
+}
