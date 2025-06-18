@@ -73,6 +73,8 @@ public class SpellInscriberBlockEntity extends BlockEntity implements NamedScree
         ItemStack output = recipe.get().value().output();
         this.setStack(OUTPUT_SLOT, new ItemStack(output.getItem(),
                 this.getStack(OUTPUT_SLOT).getCount() + output.getCount()));
+
+        markDirty();
     }
 
     @Override

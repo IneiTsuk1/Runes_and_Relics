@@ -1,9 +1,10 @@
 {
   "type": "regen:spell_inscriber",
-  "ingredient": {
-    "item": "minecraft:coal"
-  },
+  "ingredients": [
+    { "item": "minecraft:coal" }
+  ],
   "result": {
-    "id": "minecraft:diamond"
+    "id": "minecraft:diamond",
+    "count": 1
   }
 }

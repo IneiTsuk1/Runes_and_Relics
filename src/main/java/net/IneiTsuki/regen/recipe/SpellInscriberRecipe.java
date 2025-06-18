@@ -5,6 +5,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.item.ItemStack;
 import net.minecraft.network.RegistryByteBuf;
 import net.minecraft.network.codec.PacketCodec;
+import net.minecraft.network.codec.PacketCodecs;
 import net.minecraft.recipe.Ingredient;
 import net.minecraft.recipe.Recipe;
 import net.minecraft.recipe.RecipeSerializer;
@@ -13,9 +14,9 @@ import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.util.collection.DefaultedList;
 import net.minecraft.world.World;
 
-public record SpellInscriberRecipe(DefaultedList<Ingredient> ingredients, ItemStack output) implements Recipe<SpellInscriberRecipeInput> {
+import java.util.ArrayList;
 
-    //read in recipe json files ----> new spellInscriberRecipe
+public record SpellInscriberRecipe(DefaultedList<Ingredient> ingredients, ItemStack output) implements Recipe<SpellInscriberRecipeInput> {
 
     @Override
     public boolean matches(SpellInscriberRecipeInput input, World world) {
@@ -70,18 +71,19 @@ public record SpellInscriberRecipe(DefaultedList<Ingredient> ingredients, ItemSt
 
         public static final PacketCodec<RegistryByteBuf, SpellInscriberRecipe> STREAM_CODEC =
                 PacketCodec.tuple(
-                        Ingredient.PACKET_CODEC.list(11), // max of 11 ingredients
-                        ingredients -> {
-                            DefaultedList<Ingredient> list = DefaultedList.ofSize(ingredients.size(), Ingredient.EMPTY);
-                            for (int i = 0; i < ingredients.size(); i++) {
-                                list.set(i, ingredients.get(i));
-                            }
-                            return list;
-                        },
-                        list -> list, // for getter
-                        ItemStack.PACKET_CODEC, SpellInscriberRecipe::output,
-                        SpellInscriberRecipe::new
+                        PacketCodecs.collection(ArrayList::new, Ingredient.PACKET_CODEC),
+                        Recipe::getIngredients,
+
+                        ItemStack.PACKET_CODEC,
+                        SpellInscriberRecipe::output,
+
+                        (ingredients, result) -> {
+                            DefaultedList<Ingredient> ingredientsList = DefaultedList.copyOf(Ingredient.EMPTY, ingredients.toArray(new Ingredient[0]));
+                            return new SpellInscriberRecipe(ingredientsList, result);
+                        }
                 );
+
+
 
         @Override
         public MapCodec<SpellInscriberRecipe> codec() {
