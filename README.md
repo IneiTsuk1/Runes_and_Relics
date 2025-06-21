@@ -1,6 +1,6 @@
 # Project Name
 
-This minecraft mod add magic in a unque way where you can change and modify spells the way you want.
+This Minecraft mod adds magic in a unique way where you can change and modify spells the way you want.
 
 ## How to Use
 
