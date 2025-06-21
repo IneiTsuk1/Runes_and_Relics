@@ -1,6 +1,7 @@
 package net.IneiTsuki.regen.screen.SpellInscriber;
 
 import net.IneiTsuki.regen.block.entity.ImplementedInventory;
+import net.IneiTsuki.regen.block.entity.SpellInscriberBlockEntity;
 import net.IneiTsuki.regen.screen.ModScreenHandlers;
 import net.IneiTsuki.regen.screen.OutputSlot;
 import net.minecraft.entity.player.PlayerEntity;
@@ -9,85 +10,110 @@ import net.minecraft.inventory.Inventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.slot.Slot;
+import net.minecraft.util.collection.DefaultedList;
+import org.jetbrains.annotations.Nullable;
 
 public class SpellInscriberScreenHandler extends ScreenHandler {
 
+    @Nullable
+    private final SpellInscriberBlockEntity blockEntity;
     private final Inventory inventory;
 
     public SpellInscriberScreenHandler(int syncId, PlayerInventory playerInventory) {
-        this(syncId, playerInventory, ImplementedInventory.ofSize(11));
+        this(syncId, playerInventory, null);
     }
 
-    public SpellInscriberScreenHandler(int syncId, PlayerInventory playerInventory, Inventory inventory) {
+    public SpellInscriberScreenHandler(int syncId, PlayerInventory playerInventory, @Nullable SpellInscriberBlockEntity blockEntity) {
         super(ModScreenHandlers.SPELL_INSCRIBER, syncId);
-        this.inventory = inventory;
-        inventory.onOpen(playerInventory.player);
 
+        this.blockEntity = blockEntity;
+        this.inventory = blockEntity != null
+                ? blockEntity
+                : ImplementedInventory.of(DefaultedList.ofSize(11, ItemStack.EMPTY));
 
-        // block slots
-        this.addSlot(new Slot(inventory, 0, 49, 20)); // x, y position in GUI
-        this.addSlot(new Slot(inventory, 1, 72, 35));
-        this.addSlot(new Slot(inventory, 2, 83, 54));
-        this.addSlot(new Slot(inventory, 3, 72, 73));
-        this.addSlot(new Slot(inventory, 4, 49, 88));
-        this.addSlot(new Slot(inventory, 5, 26, 73));
-        this.addSlot(new Slot(inventory, 6, 15, 54));
-        this.addSlot(new Slot(inventory, 7, 26, 35));
-        this.addSlot(new OutputSlot(inventory, 8, 49, 54)); // output slot
+        if (blockEntity != null) {
+            blockEntity.onOpen(playerInventory.player);
+        }
 
+        setupCustomSlots(playerInventory.player);
+        setupPlayerInventory(playerInventory);
+        setupPlayerHotbar(playerInventory);
+
+        if (blockEntity != null) {
+            blockEntity.updateOutputSlot();
+        }
+    }
+
+    private void setupCustomSlots(PlayerEntity player) {
+        // Input slots (0–7)
+        int[][] inputPositions = {
+                {49, 20}, {72, 35}, {83, 54}, {72, 73},
+                {49, 88}, {26, 73}, {15, 54}, {26, 35}
+        };
+        for (int i = 0; i < inputPositions.length; i++) {
+            this.addSlot(new Slot(inventory, i, inputPositions[i][0], inputPositions[i][1]));
+        }
+
+        // Output slot (8)
+        this.addSlot(new OutputSlot(inventory, 8, 49, 54, player, blockEntity));
+
+        // Optional extra slots (9–10)
         this.addSlot(new Slot(inventory, 9, 127, 25));
         this.addSlot(new Slot(inventory, 10, 127, 83));
-
-        addPlayerInventory(playerInventory);
-        addPlayerHotbar(playerInventory);
     }
 
-
-
-    private void addPlayerInventory(PlayerInventory playerInventory) {
-        for (int row = 0; row < 3; ++row) {
-            for (int col = 0; col < 9; ++col) {
-                this.addSlot(new Slot(playerInventory, col + row * 9 + 9, 11 + col * 19, 132 + row * 18));
+    private void setupPlayerInventory(PlayerInventory playerInventory) {
+        for (int row = 0; row < 3; row++) {
+            for (int col = 0; col < 9; col++) {
+                int index = col + row * 9 + 9;
+                int x = 11 + col * 19;
+                int y = 132 + row * 18;
+                this.addSlot(new Slot(playerInventory, index, x, y));
             }
         }
     }
 
-    private void addPlayerHotbar(PlayerInventory playerInventory) {
-        for (int col = 0; col < 9; ++col) {
+    private void setupPlayerHotbar(PlayerInventory playerInventory) {
+        for (int col = 0; col < 9; col++) {
             this.addSlot(new Slot(playerInventory, col, 10 + col * 19, 188));
         }
     }
 
     @Override
+    public void onContentChanged(Inventory inventory) {
+        super.onContentChanged(inventory);
+        if (blockEntity != null) {
+            blockEntity.updateOutputSlot();
+        }
+    }
+
+    @Override
     public ItemStack quickMove(PlayerEntity player, int index) {
-        ItemStack newStack = ItemStack.EMPTY;
         Slot slot = this.slots.get(index);
+        if (!slot.hasStack()) return ItemStack.EMPTY;
 
-        if (slot.hasStack()) {
-            ItemStack originalStack = slot.getStack();
-            newStack = originalStack.copy();
+        ItemStack originalStack = slot.getStack();
+        ItemStack newStack = originalStack.copy();
 
-            int invSize = inventory.size();
-            int playerStart = invSize;
-            int totalSlots = this.slots.size();
+        int customInvSize = inventory.size();
+        int totalSlots = this.slots.size();
 
-            if (index < invSize) {
-                // Move from custom inventory to player inventory
-                if (!this.insertItem(originalStack, playerStart, totalSlots, true)) {
-                    return ItemStack.EMPTY;
-                }
-            } else {
-                // Move from player inventory to custom input slots (0-8)
-                if (!this.insertItem(originalStack, 0, 9, false)) {
-                    return ItemStack.EMPTY;
-                }
+        if (index < customInvSize) {
+            // Move from custom to player inventory
+            if (!this.insertItem(originalStack, customInvSize, totalSlots, true)) {
+                return ItemStack.EMPTY;
             }
-
-            if (originalStack.isEmpty()) {
-                slot.setStack(ItemStack.EMPTY);
-            } else {
-                slot.markDirty();
+        } else {
+            // Move from player to custom input (slots 0–7)
+            if (!this.insertItem(originalStack, 0, 8, false)) {
+                return ItemStack.EMPTY;
             }
+        }
+
+        if (originalStack.isEmpty()) {
+            slot.setStack(ItemStack.EMPTY);
+        } else {
+            slot.markDirty();
         }
 
         return newStack;

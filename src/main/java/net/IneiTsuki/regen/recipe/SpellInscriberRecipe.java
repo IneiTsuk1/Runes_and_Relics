@@ -16,7 +16,11 @@ import net.minecraft.world.World;
 
 import java.util.ArrayList;
 
-public record SpellInscriberRecipe(DefaultedList<Ingredient> ingredients, ItemStack output) implements Recipe<SpellInscriberRecipeInput> {
+/**
+ * Custom recipe for the Spell Inscriber.
+ */
+public record SpellInscriberRecipe(DefaultedList<Ingredient> ingredients, ItemStack output)
+        implements Recipe<SpellInscriberRecipeInput> {
 
     @Override
     public boolean matches(SpellInscriberRecipeInput input, World world) {
@@ -27,6 +31,7 @@ public record SpellInscriberRecipe(DefaultedList<Ingredient> ingredients, ItemSt
                 return false;
             }
         }
+
         return true;
     }
 
@@ -37,11 +42,11 @@ public record SpellInscriberRecipe(DefaultedList<Ingredient> ingredients, ItemSt
 
     @Override
     public boolean fits(int width, int height) {
-        return true;
+        return true; // Not a shaped recipe
     }
 
     @Override
-    public ItemStack getResult(RegistryWrapper.WrapperLookup registriesLookup) {
+    public ItemStack getResult(RegistryWrapper.WrapperLookup lookup) {
         return output;
     }
 
@@ -55,19 +60,25 @@ public record SpellInscriberRecipe(DefaultedList<Ingredient> ingredients, ItemSt
         return ModRecipes.SPELL_INSCRIBER_RECIPE_TYPE;
     }
 
+    /**
+     * Serializer for SpellInscriberRecipe, supporting JSON and packet formats.
+     */
     public static class Serializer implements RecipeSerializer<SpellInscriberRecipe> {
 
-        public static final MapCodec<SpellInscriberRecipe> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-                Ingredient.DISALLOW_EMPTY_CODEC.listOf().fieldOf("ingredients")
-                        .forGetter(recipe -> recipe.ingredients),
-                ItemStack.CODEC.fieldOf("result").forGetter(SpellInscriberRecipe::output)
-        ).apply(instance, (ingredients, result) -> {
-            DefaultedList<Ingredient> list = DefaultedList.ofSize(ingredients.size(), Ingredient.EMPTY);
-            for (int i = 0; i < ingredients.size(); i++) {
-                list.set(i, ingredients.get(i));
-            }
-            return new SpellInscriberRecipe(list, result);
-        }));
+        public static final MapCodec<SpellInscriberRecipe> CODEC = RecordCodecBuilder.mapCodec(instance ->
+                instance.group(
+                        Ingredient.DISALLOW_EMPTY_CODEC.listOf().fieldOf("ingredients")
+                                .forGetter(recipe -> recipe.ingredients),
+                        ItemStack.CODEC.fieldOf("result")
+                                .forGetter(SpellInscriberRecipe::output)
+                ).apply(instance, (ingredients, result) -> {
+                    DefaultedList<Ingredient> list = DefaultedList.ofSize(ingredients.size(), Ingredient.EMPTY);
+                    for (int i = 0; i < ingredients.size(); i++) {
+                        list.set(i, ingredients.get(i));
+                    }
+                    return new SpellInscriberRecipe(list, result);
+                })
+        );
 
         public static final PacketCodec<RegistryByteBuf, SpellInscriberRecipe> STREAM_CODEC =
                 PacketCodec.tuple(
@@ -78,12 +89,11 @@ public record SpellInscriberRecipe(DefaultedList<Ingredient> ingredients, ItemSt
                         SpellInscriberRecipe::output,
 
                         (ingredients, result) -> {
-                            DefaultedList<Ingredient> ingredientsList = DefaultedList.copyOf(Ingredient.EMPTY, ingredients.toArray(new Ingredient[0]));
-                            return new SpellInscriberRecipe(ingredientsList, result);
+                            DefaultedList<Ingredient> list =
+                                    DefaultedList.copyOf(Ingredient.EMPTY, ingredients.toArray(new Ingredient[0]));
+                            return new SpellInscriberRecipe(list, result);
                         }
                 );
-
-
 
         @Override
         public MapCodec<SpellInscriberRecipe> codec() {

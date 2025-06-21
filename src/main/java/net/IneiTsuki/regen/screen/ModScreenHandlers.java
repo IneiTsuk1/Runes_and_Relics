@@ -14,7 +14,10 @@ public class ModScreenHandlers {
         SPELL_INSCRIBER = Registry.register(
                 Registries.SCREEN_HANDLER,
                 Identifier.of("regen", "spell_inscriber"),
-                new ScreenHandlerType<>(SpellInscriberScreenHandler::new, FeatureFlags.DEFAULT_ENABLED_FEATURES)
+                new ScreenHandlerType<>(
+                        SpellInscriberScreenHandler::new,
+                        FeatureFlags.DEFAULT_ENABLED_FEATURES
+                )
         );
     }
 }
