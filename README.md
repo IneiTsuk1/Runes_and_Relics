@@ -42,4 +42,8 @@ Want to help improve the mod? Feel free to open an issue or submit a pull reques
 
 ## License
 
+<<<<<<< HEAD
 This project is licensed under the [ILR License](LICENSE.txt).
+=======
+This project is licensed under the [MIT License](LICENSE).
+>>>>>>> 0792da6e5cba3d686d4b4e53ea4edea6ec660bfc
