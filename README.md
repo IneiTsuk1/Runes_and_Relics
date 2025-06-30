@@ -2,7 +2,7 @@
 
 ![Minecraft Version](https://img.shields.io/badge/Minecraft-1.21.1-blue)
 ![Fabric API](https://img.shields.io/badge/Fabric-API-blueviolet)
-![License](https://img.shields.io/badge/License-MIT-green)
+![License](https://img.shields.io/badge/Licence-ILRL-Blue)
 
 This Minecraft mod introduces a unique magic system that lets you create, customize, and combine spells using various clarifications and magic types.
 
