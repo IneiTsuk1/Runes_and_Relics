@@ -1,21 +1,45 @@
-# Project Name
+# Runes & Relics
 
-This Minecraft mod adds magic in a unique way where you can change and modify spells the way you want.
+![Minecraft Version](https://img.shields.io/badge/Minecraft-1.21.1-blue)
+![Fabric API](https://img.shields.io/badge/Fabric-API-blueviolet)
+![License](https://img.shields.io/badge/Licence-ILRL-Blue)
+
+This Minecraft mod introduces a unique magic system that lets you create, customize, and combine spells using various clarifications and magic types.
+
+---
 
 ## How to Use
 
-Brief instructions on how to use the project.
+- **Obtain Magic Scrolls:** Find or craft magic scrolls with different combinations of clarifications (like Control, Destruction) and magic types (Fire, Ice, etc.).
+- **Cast Spells:** Right-click while holding a magic scroll to cast its spell.
+- **Combine Effects:** Scrolls can contain multiple clarifications and magic types, resulting in complex spell effects.
+- **Spell Inscriber Block:** Use the Spell Inscriber block to view, modify, and combine your spells.
+- **Creative Mode:** Access all scroll variants in the creative inventory under the "Regen" item group.
+
+---
 
 ## Installation
 
-Place the mod .jar fiile in your Minecraft mods folder.
-Run Minecraft with the correct mod loader.
+1. Download the mod `.jar` file.
+2. Place the `.jar` into your Minecraft `mods` folder.
+3. Run Minecraft using Fabric Loader (version 1.21.1 or compatible).
+4. Make sure Fabric API is installed.
+
+---
+
+## Screenshots
+
+*Coming soon!*  
+
+---
 
 ## Contributing
 
-Main contributer and developer "IneiTsuki".
-If you'd like to contribute, please open an issue or submit a pull request.
+Main contributor and developer: **IneiTsuki**  
+Want to help improve the mod? Feel free to open an issue or submit a pull request.
+
+---
 
 ## License
 
-This project is licensed under the [MIT] license.
+This project is licensed under the [ILR License](LICENSE.txt).

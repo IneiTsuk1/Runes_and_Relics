@@ -1,21 +1,35 @@
-The MIT License (MIT)
-
 Copyright (c) 2025 IneiTsuki
 
+IneiTsuki Limited Redistribution License (ILRL) – Redistribution with Permission and Credit Required
+
 Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+of this software and associated documentation files (the "Software"), to use,
+copy, and modify the Software for personal, non-commercial use.
 
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
+The following conditions apply:
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
+1. Redistribution of the Software in its original, unmodified form is permitted,
+   provided this copyright notice and license are included unchanged.
+
+2. Redistribution of modified versions of the Software, including source code or
+   compiled mods, is prohibited without prior written permission from the copyright
+   holder.
+
+3. Any redistribution of the Software, whether modified or unmodified, must include
+   clear credit to the original author(s) for the unmodified parts of the Software.
+
+4. This software is provided "as is", without warranty of any kind, express or implied,
+   including but not limited to the warranties of merchantability, fitness for a
+   particular purpose, and noninfringement. The author(s) shall not be liable for any
+   claim, damages, or other liability arising from the use of the Software.
+
+5. This license does not grant any rights to use the Minecraft trademarks, logos,
+   or related intellectual property owned by Mojang or Microsoft. It applies only
+   to the source code and assets provided by the author(s) under this license.
+
+6. This license does not grant permission to create or distribute derivative works
+   that violate Minecraft’s End User License Agreement (EULA) or terms of service.
+
+---
+
+You are free to use and modify the mod privately. Redistribution of modified versions requires permission and must credit the original author for unmodified content.
