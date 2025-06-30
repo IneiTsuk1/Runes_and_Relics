@@ -9,7 +9,6 @@ import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput;
 import net.fabricmc.fabric.api.datagen.v1.provider.FabricModelProvider;
 import net.minecraft.data.client.*;
 import net.minecraft.util.Identifier;
-import net.minecraft.data.client.Models;
 
 public class ModModelProvider extends FabricModelProvider {
 
@@ -26,7 +25,7 @@ public class ModModelProvider extends FabricModelProvider {
     public void generateItemModels(ItemModelGenerator itemModelGenerator) {
         itemModelGenerator.register(ModItems.STAFF_TEST, Models.HANDHELD);
 
-        for (MagicScrollItem scrollItem : MagicScrollItems.MAGIC_SCROLLS.values()) {
+        for (MagicScrollItem scrollItem : MagicScrollItems.getAllScrolls().values()) {
             Identifier baseTexture = Regen.id("item/scroll_base");
             String overlayName = scrollItem.getMagicTypes().isEmpty()
                     ? "default"

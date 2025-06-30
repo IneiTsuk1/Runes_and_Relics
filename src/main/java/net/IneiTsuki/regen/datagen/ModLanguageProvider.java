@@ -146,7 +146,7 @@ public class ModLanguageProvider extends FabricLanguageProvider {
     }
 
     private void addScrollTranslations(TranslationBuilder builder, LanguageConfig config) {
-        for (MagicScrollItem scrollItem : MagicScrollItems.MAGIC_SCROLLS.values()) {
+        for (MagicScrollItem scrollItem : MagicScrollItems.getAllScrolls().values()) {
             String scrollName = formatScrollName(scrollItem, config);
             builder.add(scrollItem, scrollName);
         }
@@ -188,7 +188,7 @@ public class ModLanguageProvider extends FabricLanguageProvider {
 
     private String joinClarifications(List<String> clarifications, LanguageConfig config) {
         if (clarifications.isEmpty()) return "";
-        if (clarifications.size() == 1) return clarifications.get(0);
+        if (clarifications.size() == 1) return clarifications.getFirst();
 
         if (config.useCompoundWords()) {
             // German compound words
@@ -196,7 +196,7 @@ public class ModLanguageProvider extends FabricLanguageProvider {
         } else {
             // Other languages with conjunctions
             String allButLast = String.join(", ", clarifications.subList(0, clarifications.size() - 1));
-            String last = clarifications.get(clarifications.size() - 1);
+            String last = clarifications.getLast();
             return allButLast + config.conjunction() + last;
         }
     }
