@@ -1,4 +1,4 @@
-# Project Name
+# Runes & Relics
 
 ![Minecraft Version](https://img.shields.io/badge/Minecraft-1.21.1-blue)
 ![Fabric API](https://img.shields.io/badge/Fabric-API-blueviolet)
