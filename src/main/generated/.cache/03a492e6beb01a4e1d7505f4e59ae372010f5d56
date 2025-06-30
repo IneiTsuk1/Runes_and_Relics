@@ -1,5 +1,6 @@
-// 1.21	2025-06-30T01:50:23.8567413	Regen/Model Definitions
+// 1.21	2025-06-30T20:07:20.4736251	Regen/Model Definitions
 7a9a7ab996b15755240a04a8c745b9a26280c06b assets\regen\models\item\scroll_move_ice.json
+16ce3d0a922c98ddecdf3e0d1451de926e8f9a2a assets\regen\models\item\scroll_much_destruction_fire_ice.json
 7a9a7ab996b15755240a04a8c745b9a26280c06b assets\regen\models\item\scroll_construction_ice.json
 63c299f7850e44a85fea785dbd6e7d549fcf2381 assets\regen\models\item\scroll_much_earth.json
 622652736e078f64f21e320fff0ce63ad1333829 assets\regen\models\item\scroll_control_target.json
@@ -42,8 +43,8 @@ c3c2f9caaa5b8b744623c90714b518c8abd19445 assets\regen\models\item\scroll_area_li
 63c299f7850e44a85fea785dbd6e7d549fcf2381 assets\regen\models\item\scroll_little_earth.json
 63c299f7850e44a85fea785dbd6e7d549fcf2381 assets\regen\models\item\scroll_some_earth.json
 008b8d66c7184296c1a110c5c5307706aa043681 assets\regen\models\item\scroll_area_air.json
-16ce3d0a922c98ddecdf3e0d1451de926e8f9a2a assets\regen\models\item\scroll_little_fire.json
 7a9a7ab996b15755240a04a8c745b9a26280c06b assets\regen\models\item\scroll_some_ice.json
+16ce3d0a922c98ddecdf3e0d1451de926e8f9a2a assets\regen\models\item\scroll_little_fire.json
 c3c2f9caaa5b8b744623c90714b518c8abd19445 assets\regen\models\item\scroll_move_life.json
 c3c2f9caaa5b8b744623c90714b518c8abd19445 assets\regen\models\item\scroll_some_life.json
 622652736e078f64f21e320fff0ce63ad1333829 assets\regen\models\item\scroll_move_target.json
@@ -63,6 +64,7 @@ c3c2f9caaa5b8b744623c90714b518c8abd19445 assets\regen\models\item\scroll_some_li
 0d2d48ae769eba604d6262d7fd2d829907fec728 assets\regen\models\item\scroll_little_dark.json
 28459ff7154d1ac28e259411c1ca7a4721c7973c assets\regen\models\item\scroll_move_water.json
 7a9a7ab996b15755240a04a8c745b9a26280c06b assets\regen\models\item\scroll_little_ice.json
+16ce3d0a922c98ddecdf3e0d1451de926e8f9a2a assets\regen\models\item\scroll_control_fire_water.json
 622652736e078f64f21e320fff0ce63ad1333829 assets\regen\models\item\scroll_area_target.json
 008b8d66c7184296c1a110c5c5307706aa043681 assets\regen\models\item\scroll_many_air.json
 7a9a7ab996b15755240a04a8c745b9a26280c06b assets\regen\models\item\scroll_area_ice.json
@@ -81,6 +83,6 @@ c3c2f9caaa5b8b744623c90714b518c8abd19445 assets\regen\models\item\scroll_many_li
 63c299f7850e44a85fea785dbd6e7d549fcf2381 assets\regen\models\item\scroll_many_earth.json
 51d440d0b194fe5beebf3497a6acdd10abc0afff assets\regen\models\item\scroll_little_light.json
 16ce3d0a922c98ddecdf3e0d1451de926e8f9a2a assets\regen\models\item\scroll_control_fire.json
-622652736e078f64f21e320fff0ce63ad1333829 assets\regen\models\item\scroll_destruction_target.json
 51d440d0b194fe5beebf3497a6acdd10abc0afff assets\regen\models\item\scroll_move_light.json
+622652736e078f64f21e320fff0ce63ad1333829 assets\regen\models\item\scroll_destruction_target.json
 8598e7b729c7801af77b82127812715786c3ce38 assets\regen\blockstates\spell_inscriber.json

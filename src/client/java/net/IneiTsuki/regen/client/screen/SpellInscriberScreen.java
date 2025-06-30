@@ -9,57 +9,85 @@ import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 
+/**
+ * GUI screen for the Spell Inscriber block.
+ * Displays the main crafting interface with custom background and side panel.
+ */
 public class SpellInscriberScreen extends HandledScreen<SpellInscriberScreenHandler> {
     private static final Identifier TEXTURE = Identifier.of("regen", "textures/gui/spell_inscriber.png");
 
+    /**
+     * Constructs the SpellInscriberScreen.
+     *
+     * @param handler the screen handler for interaction with server and inventory
+     * @param inventory the player inventory to render
+     * @param title the title text to display at the top
+     */
     public SpellInscriberScreen(SpellInscriberScreenHandler handler, PlayerInventory inventory, Text title) {
         super(handler, inventory, title);
         this.backgroundWidth = 188;
         this.backgroundHeight = 208;
     }
 
+    /**
+     * Draws the background of the GUI, including the main panel and side panel.
+     *
+     * @param context the rendering context
+     * @param delta frame delta time
+     * @param mouseX mouse X position
+     * @param mouseY mouse Y position
+     */
     @Override
     protected void drawBackground(DrawContext context, float delta, int mouseX, int mouseY) {
-        // Required setup
+        // Setup shader and texture
         RenderSystem.setShader(GameRenderer::getPositionTexProgram);
         RenderSystem.setShaderTexture(0, TEXTURE);
         RenderSystem.enableBlend();
 
-        // Centered coordinates
+        // Calculate top-left corner for centered rendering
         int x = (width - backgroundWidth) / 2;
         int y = (height - backgroundHeight) / 2;
 
-        // Draw the main GUI section (left part of the texture)
+        // Draw main GUI texture (left part)
         context.drawTexture(TEXTURE, x, y,
-                0, 0,                        // u, v in texture
-                backgroundWidth, backgroundHeight); // width of main gui
+                0, 0,                        // texture coordinates u, v
+                backgroundWidth, backgroundHeight);
 
-        //Draw the side panel (Assume its right next the main gui in texture)
+        // Draw side panel to the right of main GUI
         int sidePanelWidth = 68;
         int sidePanelHeight = 151;
-        int sidePanelU = 188; // right after the main gui 189px over
+        int sidePanelU = 188; // X offset in texture for side panel
         int sidePanelV = 0;
 
-        //render the side panel to the right of the main gui
         context.drawTexture(TEXTURE,
-                x + backgroundWidth, y,     // draw to screen to the right of the main Gui
-                sidePanelU, sidePanelV,        // texture origin
-                sidePanelWidth, sidePanelHeight // dimensions of side panel
-        );
-
-        // Draw the full texture
-        //context.drawTexture(TEXTURE, x, y, 0, 0, backgroundWidth, backgroundHeight);
+                x + backgroundWidth, y,
+                sidePanelU, sidePanelV,
+                sidePanelWidth, sidePanelHeight);
     }
 
+    /**
+     * Initializes the GUI, positioning title and player inventory labels.
+     */
     @Override
     protected void init() {
         super.init();
+        // Center the screen title at the top
         this.titleX = (backgroundWidth - textRenderer.getWidth(title)) / 2;
         this.titleY = 4;
+
+        // Center the player inventory title label
         this.playerInventoryTitleX = (backgroundWidth - textRenderer.getWidth(playerInventoryTitle)) / 2;
         this.playerInventoryTitleY = 110;
     }
 
+    /**
+     * Renders the screen including background, slots, and tooltips.
+     *
+     * @param context the rendering context
+     * @param mouseX current mouse X position
+     * @param mouseY current mouse Y position
+     * @param delta frame delta time
+     */
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
         this.renderBackground(context, mouseX, mouseY, delta);

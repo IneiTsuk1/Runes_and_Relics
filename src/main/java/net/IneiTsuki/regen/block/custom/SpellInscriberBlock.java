@@ -22,22 +22,44 @@ import net.minecraft.world.BlockView;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * A custom block that serves as a magical inscriber, storing and managing spells through interaction with a BlockEntity.
+ * It opens a GUI on interaction and supports a rotated bounding box and ticking behavior.
+ */
 public class SpellInscriberBlock extends BlockWithEntity {
 
+    /**
+     * Codec for data-driven block instantiation.
+     */
     public static final MapCodec<SpellInscriberBlock> CODEC = createCodec(SpellInscriberBlock::new);
 
-    // Custom bounding box shape extending beyond the usual block bounds
+    /**
+     * Custom voxel shape defining the hitbox and visual bounds of the block.
+     */
     private static final VoxelShape SHAPE = Block.createCuboidShape(-8, 0, 0, 24, 16, 16);
 
-    // Facing property to track block orientation (horizontal directions only)
+    /**
+     * Directional property used to track which horizontal direction the block is facing.
+     */
     public static final DirectionProperty FACING = HorizontalFacingBlock.FACING;
 
+    /**
+     * Constructs the SpellInscriberBlock with the given settings.
+     *
+     * @param settings The block settings (e.g., strength, material).
+     */
     public SpellInscriberBlock(Settings settings) {
         super(settings);
     }
 
     /**
-     * Returns the outline shape of the block based on its facing direction.
+     * Returns the shape of the block based on its facing direction for visual and collision purposes.
+     *
+     * @param state   The current block state.
+     * @param world   The world the block is in.
+     * @param pos     The position of the block.
+     * @param context The shape context.
+     * @return The VoxelShape representing the block's outline.
      */
     @Override
     public VoxelShape getOutlineShape(BlockState state, BlockView world, BlockPos pos, ShapeContext context) {
@@ -46,7 +68,11 @@ public class SpellInscriberBlock extends BlockWithEntity {
     }
 
     /**
-     * Rotates the shape according to the given direction.
+     * Rotates the block shape based on its facing direction.
+     *
+     * @param direction The direction the block is facing.
+     * @param shape     The original voxel shape.
+     * @return The rotated voxel shape.
      */
     private VoxelShape rotateShape(Direction direction, VoxelShape shape) {
         VoxelShape[] buffer = new VoxelShape[]{shape, VoxelShapes.empty()};
@@ -67,13 +93,21 @@ public class SpellInscriberBlock extends BlockWithEntity {
         return buffer[1];
     }
 
+    /**
+     * Returns the codec used to serialize this block in data packs.
+     *
+     * @return The block's codec.
+     */
     @Override
     protected MapCodec<? extends BlockWithEntity> getCodec() {
         return CODEC;
     }
 
     /**
-     * Determines the block state upon placement, facing the player.
+     * Determines the initial block state upon placement, setting the facing based on the player's direction.
+     *
+     * @param ctx The item placement context.
+     * @return The block state to place.
      */
     @Nullable
     @Override
@@ -82,7 +116,9 @@ public class SpellInscriberBlock extends BlockWithEntity {
     }
 
     /**
-     * Adds the facing property to the block's state manager.
+     * Appends the block's properties to the state manager for use in block states.
+     *
+     * @param builder The state manager builder.
      */
     @Override
     protected void appendProperties(StateManager.Builder<Block, BlockState> builder) {
@@ -90,7 +126,10 @@ public class SpellInscriberBlock extends BlockWithEntity {
     }
 
     /**
-     * The block is rendered using a model.
+     * Specifies that this block should be rendered using a model, not invisible or animated types.
+     *
+     * @param state The block state.
+     * @return The render type.
      */
     @Override
     public BlockRenderType getRenderType(BlockState state) {
@@ -98,8 +137,15 @@ public class SpellInscriberBlock extends BlockWithEntity {
     }
 
     /**
-     * Called when the player interacts with the block.
-     * Opens the screen handler if on the server.
+     * Called when a player right-clicks the block.
+     * If on the server, it will attempt to open the associated screen handler.
+     *
+     * @param state  The block state.
+     * @param world  The world the block is in.
+     * @param pos    The position of the block.
+     * @param player The player interacting with the block.
+     * @param hit    The raycast result of the interaction.
+     * @return ActionResult.SUCCESS on interaction.
      */
     @Override
     public ActionResult onUse(BlockState state, World world, BlockPos pos,
@@ -114,7 +160,11 @@ public class SpellInscriberBlock extends BlockWithEntity {
     }
 
     /**
-     * Creates the block entity associated with this block.
+     * Creates a new block entity instance for this block type.
+     *
+     * @param pos   The position of the block.
+     * @param state The current block state.
+     * @return A new instance of {@link SpellInscriberBlockEntity}.
      */
     @Nullable
     @Override
@@ -123,7 +173,12 @@ public class SpellInscriberBlock extends BlockWithEntity {
     }
 
     /**
-     * Returns the ticker for the block entity if on the server.
+     * Provides the server-side ticker for the block entity to perform ticking logic.
+     *
+     * @param world The world the block is in.
+     * @param state The current block state.
+     * @param type  The expected block entity type.
+     * @return A ticker if the block is on the server, or null otherwise.
      */
     @Nullable
     @Override
@@ -139,7 +194,12 @@ public class SpellInscriberBlock extends BlockWithEntity {
     }
 
     /**
-     * Provides the screen handler factory from the block entity.
+     * Creates a screen handler factory to open the block's UI.
+     *
+     * @param state The current block state.
+     * @param world The world the block is in.
+     * @param pos   The position of the block.
+     * @return A {@link NamedScreenHandlerFactory} to handle UI creation, or null if none.
      */
     @Override
     public NamedScreenHandlerFactory createScreenHandlerFactory(BlockState state,
