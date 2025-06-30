@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "regen:item/scroll_base",
+    "layer1": "regen:item/type_overlay_water"
+  }
+}
