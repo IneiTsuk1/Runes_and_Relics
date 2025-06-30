@@ -30,7 +30,6 @@ This Minecraft mod introduces a unique magic system that lets you create, custom
 ## Screenshots
 
 *Coming soon!*  
-*(Add screenshots here showcasing the spell casting, the Spell Inscriber GUI, and example scrolls.)*
 
 ---
 
