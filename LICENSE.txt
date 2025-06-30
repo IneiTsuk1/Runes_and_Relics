@@ -1,6 +1,3 @@
-# LICENSE file for your project
-# The year below can be replaced automatically by your build script or manually updated.
-
 Copyright (c) 2025 IneiTsuki
 
 IneiTsuki Limited Redistribution License (ILRL) – Redistribution with Permission and Credit Required
