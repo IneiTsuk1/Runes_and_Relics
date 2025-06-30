@@ -50,6 +50,9 @@ processResources {
     inputs.property "loader_version", project.loader_version
     filteringCharset "UTF-8"
 
+    // Add duplicate handling strategy
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
     filesMatching("fabric.mod.json") {
         expand "version": project.version,
                 "minecraft_version": project.minecraft_version,
