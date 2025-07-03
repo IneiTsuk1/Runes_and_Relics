@@ -2,7 +2,7 @@ package net.IneiTsuki.regen.client.screen;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.render.GameRenderer;
-import net.IneiTsuki.regen.screen.SpellInscriber.SpellInscriberScreenHandler;
+import net.IneiTsuki.regen.client.screen.SpellInscriber.SpellInscriberScreenHandler;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.entity.player.PlayerInventory;

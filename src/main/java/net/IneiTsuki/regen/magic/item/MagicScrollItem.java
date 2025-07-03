@@ -1,9 +1,10 @@
 package net.IneiTsuki.regen.magic.item;
 
-import net.IneiTsuki.regen.magic.MagicConstants;
-import net.IneiTsuki.regen.magic.MagicEnums;
-import net.IneiTsuki.regen.magic.MagicInteractionRules;
-import net.IneiTsuki.regen.magic.interfaces.MagicEffect;
+import net.IneiTsuki.regen.magic.core.MagicConstants;
+import net.IneiTsuki.regen.magic.api.MagicEnums;
+import net.IneiTsuki.regen.magic.core.MagicInteractionRules;
+import net.IneiTsuki.regen.magic.core.TickScheduler;
+import net.IneiTsuki.regen.magic.api.MagicEffect;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -103,24 +104,23 @@ public class MagicScrollItem extends Item {
                         SoundEvents.ITEM_BOOK_PAGE_TURN, SoundCategory.PLAYERS,
                         MagicConstants.DEFAULT_SOUND_VOLUME, MagicConstants.DEFAULT_SOUND_PITCH);
 
-                // Apply the magic effect
-                boolean success = effect.apply(world, user, clarifications, types);
+                user.sendMessage(Text.literal("You begin casting...").formatted(Formatting.GRAY), true);
 
-                if (success) {
-                    // Consume the scroll (unless creative mode)
-                    if (!user.getAbilities().creativeMode) {
-                        itemStack.decrement(1);
+                TickScheduler.schedule(MagicConstants.DEFAULT_CAST_DELAY_TICKS, () -> {
+                    boolean success = effect.apply(world, user, clarifications, types);
+
+                    if (success) {
+                        if (!user.getAbilities().creativeMode) {
+                            itemStack.decrement(1);
+                        }
+                    } else {
+                        user.sendMessage(Text.literal(MagicConstants.ERROR_SPELL_BACKFIRE)
+                                .formatted(Formatting.RED), false);
+                        world.playSound(null, user.getX(), user.getY(), user.getZ(),
+                                SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS,
+                                MagicConstants.DEFAULT_SOUND_VOLUME, MagicConstants.DEFAULT_SOUND_PITCH);
                     }
-                    return TypedActionResult.success(itemStack, false);
-                } else {
-                    // Effect failed
-                    user.sendMessage(Text.literal(MagicConstants.ERROR_SPELL_BACKFIRE)
-                            .formatted(Formatting.RED), false);
-                    world.playSound(null, user.getX(), user.getY(), user.getZ(),
-                            SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS,
-                            MagicConstants.DEFAULT_SOUND_VOLUME, MagicConstants.DEFAULT_SOUND_PITCH);
-                    return TypedActionResult.fail(itemStack);
-                }
+                });
 
             } catch (Exception e) {
                 // Handle any unexpected errors gracefully
@@ -174,6 +174,11 @@ public class MagicScrollItem extends Item {
         }
 
         tooltip.add(Text.empty()); // Empty line for spacing
+
+        tooltip.add(Text.literal("Casting Time: " + (effect.getCastDelayTicks() / 20.0) + "s")
+                .formatted(Formatting.DARK_PURPLE));
+
+
 
         // Interaction effects
         String modifications = MagicInteractionRules.getModificationDescription(clarifications, types);

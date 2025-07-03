@@ -1,9 +1,9 @@
 package net.IneiTsuki.regen;
 
-import net.IneiTsuki.regen.datagen.ModBlockTagProvider;
-import net.IneiTsuki.regen.datagen.ModLanguageProvider;
-import net.IneiTsuki.regen.datagen.ModLootTableProvider;
-import net.IneiTsuki.regen.datagen.ModModelProvider;
+import net.IneiTsuki.regen.datagen.tags.ModBlockTagProvider;
+import net.IneiTsuki.regen.datagen.language.ModLanguageProvider;
+import net.IneiTsuki.regen.datagen.loot.ModLootTableProvider;
+import net.IneiTsuki.regen.datagen.model.ModModelProvider;
 import net.fabricmc.fabric.api.datagen.v1.DataGeneratorEntrypoint;
 import net.fabricmc.fabric.api.datagen.v1.FabricDataGenerator;
 

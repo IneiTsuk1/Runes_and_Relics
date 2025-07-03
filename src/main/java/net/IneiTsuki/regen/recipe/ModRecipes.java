@@ -1,6 +1,7 @@
 package net.IneiTsuki.regen.recipe;
 
 import net.IneiTsuki.regen.Regen;
+import net.IneiTsuki.regen.recipe.impl.SpellInscriberRecipe;
 import net.minecraft.recipe.RecipeSerializer;
 import net.minecraft.recipe.RecipeType;
 import net.minecraft.registry.Registries;

@@ -1,9 +1,9 @@
 package net.IneiTsuki.regen.block.entity;
 
 import net.IneiTsuki.regen.recipe.ModRecipes;
-import net.IneiTsuki.regen.recipe.SpellInscriberRecipe;
-import net.IneiTsuki.regen.recipe.SpellInscriberRecipeInput;
-import net.IneiTsuki.regen.screen.SpellInscriber.SpellInscriberScreenHandler;
+import net.IneiTsuki.regen.recipe.impl.SpellInscriberRecipe;
+import net.IneiTsuki.regen.recipe.types.SpellInscriberRecipeInput;
+import net.IneiTsuki.regen.client.screen.SpellInscriber.SpellInscriberScreenHandler;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.player.PlayerEntity;

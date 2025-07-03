@@ -1,16 +1,18 @@
 package net.IneiTsuki.regen.magic.item;
 
 import net.IneiTsuki.regen.Regen;
-import net.IneiTsuki.regen.magic.MagicConstants;
-import net.IneiTsuki.regen.magic.MagicEnums.Clarification;
-import net.IneiTsuki.regen.magic.MagicEnums.MagicType;
-import net.IneiTsuki.regen.magic.MagicScrollEffects;
-import net.IneiTsuki.regen.magic.interfaces.MagicEffect;
+import net.IneiTsuki.regen.magic.core.MagicConstants;
+import net.IneiTsuki.regen.magic.api.MagicEnums.Clarification;
+import net.IneiTsuki.regen.magic.api.MagicEnums.MagicType;
+import net.IneiTsuki.regen.magic.effect.MagicScrollEffects;
+import net.IneiTsuki.regen.magic.api.MagicEffect;
 import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroupEntries;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.minecraft.text.Text;
+import net.minecraft.world.World;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -90,25 +92,25 @@ public final class MagicScrollItems {
      * Registers compound scrolls with multiple clarifications or types.
      */
     private static void registerCompoundScrolls() {
-        // Example compound scroll: Area + Many Fire
+        // Fire: Area + Many — with 2s casting delay
         registerMagicScroll(
                 List.of(Clarification.AREA, Clarification.MANY),
                 List.of(MagicType.FIRE),
-                MagicScrollEffects::fireSpell
+                wrapWithDelay(MagicScrollEffects::fireSpell, 40) // 2 seconds
         );
 
-        // Example multi-type scroll: Control Fire + Water (steam effect)
+        // Fire + Water = Steam — with 3s delay
         registerMagicScroll(
                 List.of(Clarification.CONTROL),
                 List.of(MagicType.FIRE, MagicType.WATER),
-                createSteamEffect()
+                wrapWithDelay(createSteamEffect(), 60) // 3 seconds
         );
 
-        // Example complex combination: Much Destruction Fire + Ice
+        // Much Destruction Fire + Ice = Thermal Shock — 4s delay
         registerMagicScroll(
                 List.of(Clarification.MUCH, Clarification.DESTRUCTION),
                 List.of(MagicType.FIRE, MagicType.ICE),
-                createThermalShockEffect()
+                wrapWithDelay(createThermalShockEffect(), 80) // 4 seconds
         );
     }
 
@@ -310,6 +312,26 @@ public final class MagicScrollItems {
     public static Map<String, MagicScrollItem> getAllScrolls() {
         return Map.copyOf(MAGIC_SCROLLS);
     }
+
+    private static MagicEffect wrapWithDelay(MagicEffect base, int delayTicks) {
+        return new MagicEffect() {
+            @Override
+            public boolean canApply(World world, PlayerEntity user, List<Clarification> clarifications, List<MagicType> types) {
+                return base.canApply(world, user, clarifications, types);
+            }
+
+            @Override
+            public boolean apply(World world, PlayerEntity user, List<Clarification> clarifications, List<MagicType> types) {
+                return base.apply(world, user, clarifications, types);
+            }
+
+            @Override
+            public int getCastDelayTicks() {
+                return delayTicks;
+            }
+        };
+    }
+
 
     /**
      * Gets the number of registered scrolls.

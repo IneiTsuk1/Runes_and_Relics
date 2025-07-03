@@ -3,10 +3,12 @@ package net.IneiTsuki.regen;
 import net.IneiTsuki.regen.block.ModBlocks;
 import net.IneiTsuki.regen.block.entity.ModBlockEntities;
 import net.IneiTsuki.regen.item.ModItems;
+import net.IneiTsuki.regen.magic.core.TickScheduler;
 import net.IneiTsuki.regen.magic.item.MagicScrollItems;
 import net.IneiTsuki.regen.recipe.ModRecipes;
-import net.IneiTsuki.regen.screen.ModScreenHandlers;
+import net.IneiTsuki.regen.client.screen.handlers.ModScreenHandlers;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.minecraft.item.ItemGroups;
 import net.minecraft.util.Identifier;
@@ -43,6 +45,8 @@ public class Regen implements ModInitializer {
 
         // Add magic scrolls and related items to the TOOLS creative tab
         ItemGroupEvents.modifyEntriesEvent(ItemGroups.TOOLS).register(MagicScrollItems::addItemsToItemGroup);
+
+        ServerTickEvents.END_SERVER_TICK.register(server -> TickScheduler.tick());
 
         LOGGER.info("Regen Mod initialized successfully!");
     }
