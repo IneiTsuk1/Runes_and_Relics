@@ -1,6 +1,6 @@
 package net.IneiTsuki.regen.magic.api;
 
-import net.IneiTsuki.regen.magic.core.MagicConstants;
+import net.IneiTsuki.regen.magic.core.constants.MagicConstants;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.world.World;
 
@@ -57,6 +57,70 @@ public interface MagicEffect {
     }
 
     /**
+     * Gets the casting delay in ticks for this effect.
+     * Override to provide custom delays based on spell complexity.
+     *
+     * @param world The world context
+     * @param user The player casting the spell
+     * @param clarifications The clarifications for the spell
+     * @param types The magic types for the spell
+     * @return The delay in ticks before the effect activates
+     */
+    default int getCastDelayTicks(World world, PlayerEntity user,
+                                  List<MagicEnums.Clarification> clarifications,
+                                  List<MagicEnums.MagicType> types) {
+        return MagicConstants.DEFAULT_CAST_DELAY_TICKS;
+    }
+
+    /**
+     * Gets the active duration in ticks for this effect.
+     * Override for effects that need to persist over time.
+     *
+     * @param world The world context
+     * @param user The player casting the spell
+     * @param clarifications The clarifications for the spell
+     * @param types The magic types for the spell
+     * @return The duration in ticks the effect remains active (0 for instant effects)
+     */
+    default int getActiveDurationTicks(World world, PlayerEntity user,
+                                       List<MagicEnums.Clarification> clarifications,
+                                       List<MagicEnums.MagicType> types) {
+        return 0; // Default = instant
+    }
+
+    /**
+     * Called when the effect duration expires.
+     * Override for cleanup logic or ending effects.
+     *
+     * @param world The world context
+     * @param user The player who cast the spell
+     * @param clarifications The clarifications for the spell
+     * @param types The magic types for the spell
+     */
+    default void onEnd(World world, PlayerEntity user,
+                       List<MagicEnums.Clarification> clarifications,
+                       List<MagicEnums.MagicType> types) {
+        // Optional cleanup logic
+    }
+
+    /**
+     * Called every tick while the effect is active.
+     * Override for effects that need continuous updates.
+     *
+     * @param world The world context
+     * @param user The player who cast the spell
+     * @param clarifications The clarifications for the spell
+     * @param types The magic types for the spell
+     * @param ticksRemaining How many ticks are left until the effect ends
+     */
+    default void onTick(World world, PlayerEntity user,
+                        List<MagicEnums.Clarification> clarifications,
+                        List<MagicEnums.MagicType> types,
+                        int ticksRemaining) {
+        // Optional per-tick logic
+    }
+
+    /**
      * Validates input parameters for magic effects.
      *
      * @param world The world context
@@ -81,9 +145,4 @@ public interface MagicEffect {
             throw new IllegalArgumentException("Magic types list cannot be empty");
         }
     }
-
-    default int getCastDelayTicks() {
-        return MagicConstants.DEFAULT_CAST_DELAY_TICKS;
-    }
-
 }

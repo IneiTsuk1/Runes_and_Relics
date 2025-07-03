@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/handheld",
   "textures": {
-    "layer0": "regen:item/staff_test"
+    "layer0": "regen:item/staff_test/staff_test"
   }
 }

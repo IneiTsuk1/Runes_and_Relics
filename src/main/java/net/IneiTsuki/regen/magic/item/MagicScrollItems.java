@@ -1,10 +1,12 @@
 package net.IneiTsuki.regen.magic.item;
 
 import net.IneiTsuki.regen.Regen;
-import net.IneiTsuki.regen.magic.core.MagicConstants;
+import net.IneiTsuki.regen.magic.api.MagicEnums;
+import net.IneiTsuki.regen.magic.core.constants.MagicConstants;
 import net.IneiTsuki.regen.magic.api.MagicEnums.Clarification;
 import net.IneiTsuki.regen.magic.api.MagicEnums.MagicType;
-import net.IneiTsuki.regen.magic.effect.MagicScrollEffects;
+import net.IneiTsuki.regen.magic.effect.spell.FireSpellEffect;
+import net.IneiTsuki.regen.magic.effect.scroll.MagicScrollEffects;
 import net.IneiTsuki.regen.magic.api.MagicEffect;
 import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroupEntries;
 import net.minecraft.entity.player.PlayerEntity;
@@ -41,6 +43,16 @@ public final class MagicScrollItems {
      */
     private static final Set<String> REGISTERED_NAMES = ConcurrentHashMap.newKeySet();
 
+    /**
+     * Cached sorted list of scrolls for performance in creative menu.
+     */
+    private static volatile List<MagicScrollItem> cachedSortedScrolls = null;
+
+    /**
+     * Lock for registration operations to ensure thread safety.
+     */
+    private static final Object REGISTRATION_LOCK = new Object();
+
     private MagicScrollItems() {
         throw new UnsupportedOperationException("Registry class cannot be instantiated");
     }
@@ -50,68 +62,112 @@ public final class MagicScrollItems {
      * This method should be called during mod initialization.
      */
     public static void registerItems() {
-        Regen.LOGGER.info("Beginning magic scroll registration...");
+        synchronized (REGISTRATION_LOCK) {
+            Regen.LOGGER.info("Beginning magic scroll registration...");
 
-        try {
-            // Register basic 1x1 scrolls (single clarification + single magic type)
-            registerBasicScrolls();
+            try {
+                // Clear any existing registrations (for hot reloading scenarios)
+                clearRegistrations();
 
-            // Register compound scrolls (custom combinations)
-            registerCompoundScrolls();
+                // Register basic 1x1 scrolls (single clarification + single magic type)
+                registerBasicScrolls();
 
-            Regen.LOGGER.info("Successfully registered {} magic scrolls", MAGIC_SCROLLS.size());
+                // Register compound scrolls (custom combinations)
+                registerCompoundScrolls();
 
-        } catch (Exception e) {
-            Regen.LOGGER.error("Failed to register magic scrolls", e);
-            throw new RuntimeException("Magic scroll registration failed", e);
+                // Invalidate cached sorted list
+                cachedSortedScrolls = null;
+
+                Regen.LOGGER.info("Successfully registered {} magic scrolls", MAGIC_SCROLLS.size());
+
+            } catch (Exception e) {
+                Regen.LOGGER.error("Failed to register magic scrolls", e);
+                throw new RuntimeException("Magic scroll registration failed", e);
+            }
         }
+    }
+
+    /**
+     * Clears all registrations (for hot reloading scenarios).
+     */
+    private static void clearRegistrations() {
+        MAGIC_SCROLLS.clear();
+        REGISTERED_NAMES.clear();
+        cachedSortedScrolls = null;
     }
 
     /**
      * Registers basic scrolls for each clarification-type combination.
      */
     private static void registerBasicScrolls() {
+        int registeredCount = 0;
+        int totalCombinations = Clarification.values().length * MagicType.values().length;
+
         for (Clarification clarification : Clarification.values()) {
             for (MagicType magicType : MagicType.values()) {
+                try {
+                    List<Clarification> clarifications = List.of(clarification);
+                    List<MagicType> types = List.of(magicType);
 
-                List<Clarification> clarifications = List.of(clarification);
-                List<MagicType> types = List.of(magicType);
+                    // Default effect - just sends a message
+                    MagicEffect effect = createDefaultEffect(clarifications, types);
 
-                // Default effect - just sends a message
-                MagicEffect effect = createDefaultEffect(clarifications, types);
+                    // Override with custom effects for specific combinations
+                    effect = getCustomEffectOrDefault(clarifications, types, effect);
 
-                // Override with custom effects for specific combinations
-                effect = getCustomEffectOrDefault(clarifications, types, effect);
+                    registerMagicScroll(clarifications, types, effect);
+                    registeredCount++;
 
-                registerMagicScroll(clarifications, types, effect);
+                } catch (Exception e) {
+                    Regen.LOGGER.warn("Failed to register basic scroll for {} + {}: {}",
+                            clarification.getName(), magicType.getName(), e.getMessage());
+                }
             }
         }
+
+        Regen.LOGGER.info("Registered {}/{} basic scroll combinations", registeredCount, totalCombinations);
     }
 
     /**
      * Registers compound scrolls with multiple clarifications or types.
      */
     private static void registerCompoundScrolls() {
-        // Fire: Area + Many — with 2s casting delay
-        registerMagicScroll(
-                List.of(Clarification.AREA, Clarification.MANY),
-                List.of(MagicType.FIRE),
-                wrapWithDelay(MagicScrollEffects::fireSpell, 40) // 2 seconds
-        );
+        int registeredCount = 0;
 
-        // Fire + Water = Steam — with 3s delay
-        registerMagicScroll(
-                List.of(Clarification.CONTROL),
-                List.of(MagicType.FIRE, MagicType.WATER),
-                wrapWithDelay(createSteamEffect(), 60) // 3 seconds
-        );
+        try {
+            // Fire: Area + Many — with 2s casting delay (40 ticks), 10s duration (200 ticks)
+            MagicEffect fireEffect = new FireSpellEffect(
+                    List.of(Clarification.AREA, Clarification.MANY),
+                    List.of(MagicType.FIRE)
+            );
+            registerMagicScroll(
+                    List.of(Clarification.AREA, Clarification.MANY),
+                    List.of(MagicType.FIRE),
+                    wrapWithDelayAndDuration(fireEffect, 40, 200)
+            );
+            registeredCount++;
 
-        // Much Destruction Fire + Ice = Thermal Shock — 4s delay
-        registerMagicScroll(
-                List.of(Clarification.MUCH, Clarification.DESTRUCTION),
-                List.of(MagicType.FIRE, MagicType.ICE),
-                wrapWithDelay(createThermalShockEffect(), 80) // 4 seconds
-        );
+            // Fire + Water = Steam — with 3s delay
+            registerMagicScroll(
+                    List.of(Clarification.CONTROL),
+                    List.of(MagicType.FIRE, MagicType.WATER),
+                    wrapWithDelayAndDuration(createSteamEffect(), 60, 0)
+            );
+            registeredCount++;
+
+            // Much Destruction Fire + Ice = Thermal Shock — 4s delay
+            registerMagicScroll(
+                    List.of(Clarification.MUCH, Clarification.DESTRUCTION),
+                    List.of(MagicType.FIRE, MagicType.ICE),
+                    wrapWithDelayAndDuration(createThermalShockEffect(), 80, 0)
+            );
+            registeredCount++;
+
+        } catch (Exception e) {
+            Regen.LOGGER.error("Failed to register compound scrolls", e);
+        }
+
+        Regen.LOGGER.info("Registered {} compound scroll combinations", registeredCount);
     }
 
     /**
@@ -127,17 +183,7 @@ public final class MagicScrollItems {
                                             List<MagicType> types,
                                             MagicEffect effect) {
         // Validate inputs
-        Objects.requireNonNull(clarifications, "Clarifications cannot be null");
-        Objects.requireNonNull(types, "Magic types cannot be null");
-        Objects.requireNonNull(effect, "Magic effect cannot be null");
-
-        if (clarifications.isEmpty()) {
-            throw new IllegalArgumentException("Clarifications list cannot be empty");
-        }
-
-        if (types.isEmpty()) {
-            throw new IllegalArgumentException("Magic types list cannot be empty");
-        }
+        validateRegistrationParameters(clarifications, types, effect);
 
         String name = generateScrollName(clarifications, types);
 
@@ -165,6 +211,34 @@ public final class MagicScrollItems {
     }
 
     /**
+     * Validates registration parameters.
+     */
+    private static void validateRegistrationParameters(List<Clarification> clarifications,
+                                                       List<MagicType> types,
+                                                       MagicEffect effect) {
+        Objects.requireNonNull(clarifications, "Clarifications cannot be null");
+        Objects.requireNonNull(types, "Magic types cannot be null");
+        Objects.requireNonNull(effect, "Magic effect cannot be null");
+
+        if (clarifications.isEmpty()) {
+            throw new IllegalArgumentException("Clarifications list cannot be empty");
+        }
+
+        if (types.isEmpty()) {
+            throw new IllegalArgumentException("Magic types list cannot be empty");
+        }
+
+        // Check for null elements in lists
+        if (clarifications.stream().anyMatch(Objects::isNull)) {
+            throw new IllegalArgumentException("Clarifications list cannot contain null elements");
+        }
+
+        if (types.stream().anyMatch(Objects::isNull)) {
+            throw new IllegalArgumentException("Magic types list cannot contain null elements");
+        }
+    }
+
+    /**
      * Generates a unique name for a scroll based on its clarifications and types.
      *
      * @param clarifications The clarifications for the scroll
@@ -173,18 +247,24 @@ public final class MagicScrollItems {
      */
     private static String generateScrollName(List<Clarification> clarifications,
                                              List<MagicType> types) {
-        String clarificationPart = clarifications.stream()
-                .map(Clarification::getName)
-                .collect(Collectors.joining(MagicConstants.SCROLL_NAME_SEPARATOR));
+        try {
+            String clarificationPart = clarifications.stream()
+                    .map(Clarification::getName)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.joining(MagicConstants.SCROLL_NAME_SEPARATOR));
 
-        String typePart = types.stream()
-                .map(MagicType::getName)
-                .collect(Collectors.joining(MagicConstants.SCROLL_NAME_SEPARATOR));
+            String typePart = types.stream()
+                    .map(MagicType::getName)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.joining(MagicConstants.SCROLL_NAME_SEPARATOR));
 
-        return MagicConstants.SCROLL_NAME_PREFIX +
-                clarificationPart +
-                MagicConstants.SCROLL_NAME_SEPARATOR +
-                typePart;
+            return MagicConstants.SCROLL_NAME_PREFIX +
+                    clarificationPart +
+                    MagicConstants.SCROLL_NAME_SEPARATOR +
+                    typePart;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to generate scroll name", e);
+        }
     }
 
     /**
@@ -196,10 +276,12 @@ public final class MagicScrollItems {
             try {
                 String clarificationNames = cls.stream()
                         .map(Clarification::getFormattedName)
+                        .filter(Objects::nonNull)
                         .collect(Collectors.joining(" "));
 
                 String typeNames = tys.stream()
                         .map(MagicType::getFormattedName)
+                        .filter(Objects::nonNull)
                         .collect(Collectors.joining(" "));
 
                 String message = String.format(MagicConstants.SUCCESS_SCROLL_CAST,
@@ -209,6 +291,7 @@ public final class MagicScrollItems {
                 return true;
 
             } catch (Exception e) {
+                Regen.LOGGER.error("Failed to execute default scroll effect", e);
                 return false;
             }
         };
@@ -221,16 +304,30 @@ public final class MagicScrollItems {
                                                         List<MagicType> types,
                                                         MagicEffect defaultEffect) {
         // Control + Fire combination gets fire spell
-        if (clarifications.contains(Clarification.CONTROL) &&
-                types.contains(MagicType.FIRE) &&
-                clarifications.size() == 1 &&
-                types.size() == 1) {
+        if (isSingleCombination(clarifications, types, Clarification.CONTROL, MagicType.FIRE)) {
             return MagicScrollEffects::fireSpell;
         }
 
         // Add more custom combinations here as needed
+        // Examples:
+        // if (isSingleCombination(clarifications, types, Clarification.DESTRUCTION, MagicType.EARTH)) {
+        //     return MagicScrollEffects::earthquakeSpell;
+        // }
 
         return defaultEffect;
+    }
+
+    /**
+     * Helper method to check if lists contain exactly one specific clarification and type.
+     */
+    private static boolean isSingleCombination(List<Clarification> clarifications,
+                                               List<MagicType> types,
+                                               Clarification expectedClarification,
+                                               MagicType expectedType) {
+        return clarifications.size() == 1 &&
+                types.size() == 1 &&
+                clarifications.contains(expectedClarification) &&
+                types.contains(expectedType);
     }
 
     /**
@@ -243,6 +340,7 @@ public final class MagicScrollItems {
                 user.sendMessage(Text.literal("You create a cloud of steam!"), false);
                 return true;
             } catch (Exception e) {
+                Regen.LOGGER.error("Failed to execute steam effect", e);
                 return false;
             }
         };
@@ -258,6 +356,7 @@ public final class MagicScrollItems {
                 user.sendMessage(Text.literal("You unleash devastating thermal shock!"), false);
                 return true;
             } catch (Exception e) {
+                Regen.LOGGER.error("Failed to execute thermal shock effect", e);
                 return false;
             }
         };
@@ -265,23 +364,58 @@ public final class MagicScrollItems {
 
     /**
      * Adds all registered magic scrolls to the creative inventory.
+     * Uses caching for performance optimization.
      *
      * @param entries The item group entries to add scrolls to
      */
     public static void addItemsToItemGroup(FabricItemGroupEntries entries) {
         Objects.requireNonNull(entries, "Entries cannot be null");
 
-        // Add scrolls in a deterministic order (by name)
-        MAGIC_SCROLLS.values().stream()
+        // Use cached sorted list if available
+        List<MagicScrollItem> sortedScrolls = cachedSortedScrolls;
+        if (sortedScrolls == null) {
+            synchronized (REGISTRATION_LOCK) {
+                sortedScrolls = cachedSortedScrolls;
+                if (sortedScrolls == null) {
+                    sortedScrolls = createSortedScrollsList();
+                    cachedSortedScrolls = sortedScrolls;
+                }
+            }
+        }
+
+        // Add scrolls to entries
+        sortedScrolls.forEach(entries::add);
+    }
+
+    /**
+     * Creates a sorted list of scrolls for the creative menu.
+     */
+    private static List<MagicScrollItem> createSortedScrollsList() {
+        return MAGIC_SCROLLS.values().stream()
                 .sorted((a, b) -> {
-                    // Sort by stability first (stable scrolls first), then by name
+                    // Sort by stability first (stable scrolls first)
                     if (a.isStable() != b.isStable()) {
                         return a.isStable() ? -1 : 1;
                     }
-                    // Compare by registry name if available, otherwise by clarifications/types
-                    return 0; // Maintain insertion order for items with same stability
+                    // Then by complexity (fewer clarifications/types first)
+                    int complexityA = a.getClarifications().size() + a.getMagicTypes().size();
+                    int complexityB = b.getClarifications().size() + b.getMagicTypes().size();
+                    if (complexityA != complexityB) {
+                        return Integer.compare(complexityA, complexityB);
+                    }
+                    // Finally by name (deterministic ordering)
+                    return compareScrollsByName(a, b);
                 })
-                .forEach(entries::add);
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Compares two scrolls by their generated names.
+     */
+    private static int compareScrollsByName(MagicScrollItem a, MagicScrollItem b) {
+        String nameA = generateScrollName(a.getClarifications(), a.getMagicTypes());
+        String nameB = generateScrollName(b.getClarifications(), b.getMagicTypes());
+        return nameA.compareTo(nameB);
     }
 
     /**
@@ -289,7 +423,7 @@ public final class MagicScrollItems {
      *
      * @param clarifications The clarifications to search for
      * @param types The magic types to search for
-     * @return The matching scroll, or null if not found
+     * @return The matching scroll, or empty if not found
      */
     public static Optional<MagicScrollItem> getScroll(List<Clarification> clarifications,
                                                       List<MagicType> types) {
@@ -300,12 +434,18 @@ public final class MagicScrollItems {
             return Optional.empty();
         }
 
-        String name = generateScrollName(clarifications, types);
-        return Optional.ofNullable(MAGIC_SCROLLS.get(name));
+        try {
+            String name = generateScrollName(clarifications, types);
+            return Optional.ofNullable(MAGIC_SCROLLS.get(name));
+        } catch (Exception e) {
+            Regen.LOGGER.warn("Failed to get scroll for combination: {}", e.getMessage());
+            return Optional.empty();
+        }
     }
 
     /**
      * Gets all registered magic scrolls.
+     * Returns a defensive copy to prevent external modification.
      *
      * @return Immutable map of all registered scrolls
      */
@@ -313,25 +453,58 @@ public final class MagicScrollItems {
         return Map.copyOf(MAGIC_SCROLLS);
     }
 
-    private static MagicEffect wrapWithDelay(MagicEffect base, int delayTicks) {
+    /**
+     * Wraps a magic effect with custom delay and duration.
+     * This creates a new effect that overrides the timing methods.
+     */
+    private static MagicEffect wrapWithDelayAndDuration(MagicEffect base, int delayTicks, int durationTicks) {
+        Objects.requireNonNull(base, "Base effect cannot be null");
+
         return new MagicEffect() {
             @Override
-            public boolean canApply(World world, PlayerEntity user, List<Clarification> clarifications, List<MagicType> types) {
-                return base.canApply(world, user, clarifications, types);
+            public boolean apply(World world, PlayerEntity user,
+                                 List<MagicEnums.Clarification> cls,
+                                 List<MagicEnums.MagicType> tys) {
+                return base.apply(world, user, cls, tys);
             }
 
             @Override
-            public boolean apply(World world, PlayerEntity user, List<Clarification> clarifications, List<MagicType> types) {
-                return base.apply(world, user, clarifications, types);
+            public boolean canApply(World world, PlayerEntity user,
+                                    List<MagicEnums.Clarification> cls,
+                                    List<MagicEnums.MagicType> tys) {
+                return base.canApply(world, user, cls, tys);
             }
 
             @Override
-            public int getCastDelayTicks() {
-                return delayTicks;
+            public int getCastDelayTicks(World world, PlayerEntity user,
+                                         List<MagicEnums.Clarification> cls,
+                                         List<MagicEnums.MagicType> tys) {
+                return Math.max(0, delayTicks);
+            }
+
+            @Override
+            public int getActiveDurationTicks(World world, PlayerEntity user,
+                                              List<MagicEnums.Clarification> cls,
+                                              List<MagicEnums.MagicType> tys) {
+                return Math.max(0, durationTicks);
+            }
+
+            @Override
+            public void onTick(World world, PlayerEntity user,
+                               List<MagicEnums.Clarification> cls,
+                               List<MagicEnums.MagicType> tys,
+                               int ticksRemaining) {
+                base.onTick(world, user, cls, tys, ticksRemaining);
+            }
+
+            @Override
+            public void onEnd(World world, PlayerEntity user,
+                              List<MagicEnums.Clarification> cls,
+                              List<MagicEnums.MagicType> tys) {
+                base.onEnd(world, user, cls, tys);
             }
         };
     }
-
 
     /**
      * Gets the number of registered scrolls.
@@ -352,5 +525,27 @@ public final class MagicScrollItems {
     public static boolean scrollExists(List<Clarification> clarifications,
                                        List<MagicType> types) {
         return getScroll(clarifications, types).isPresent();
+    }
+
+    /**
+     * Gets statistics about registered scrolls.
+     *
+     * @return A map containing various statistics
+     */
+    public static Map<String, Object> getRegistrationStats() {
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("totalScrolls", MAGIC_SCROLLS.size());
+        stats.put("basicScrolls", (long) Clarification.values().length * MagicType.values().length);
+        stats.put("compoundScrolls", MAGIC_SCROLLS.size() - (long) Clarification.values().length * MagicType.values().length);
+
+        // Count by complexity
+        Map<Integer, Long> complexityCount = MAGIC_SCROLLS.values().stream()
+                .collect(Collectors.groupingBy(
+                        scroll -> scroll.getClarifications().size() + scroll.getMagicTypes().size(),
+                        Collectors.counting()
+                ));
+        stats.put("complexityDistribution", complexityCount);
+
+        return stats;
     }
 }

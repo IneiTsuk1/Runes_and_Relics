@@ -3,7 +3,8 @@ package net.IneiTsuki.regen;
 import net.IneiTsuki.regen.block.ModBlocks;
 import net.IneiTsuki.regen.block.entity.ModBlockEntities;
 import net.IneiTsuki.regen.item.ModItems;
-import net.IneiTsuki.regen.magic.core.TickScheduler;
+import net.IneiTsuki.regen.magic.effect.active.ActiveSpellTracker;
+import net.IneiTsuki.regen.magic.core.scheduler.TickScheduler;
 import net.IneiTsuki.regen.magic.item.MagicScrollItems;
 import net.IneiTsuki.regen.recipe.ModRecipes;
 import net.IneiTsuki.regen.client.screen.handlers.ModScreenHandlers;
@@ -47,6 +48,11 @@ public class Regen implements ModInitializer {
         ItemGroupEvents.modifyEntriesEvent(ItemGroups.TOOLS).register(MagicScrollItems::addItemsToItemGroup);
 
         ServerTickEvents.END_SERVER_TICK.register(server -> TickScheduler.tick());
+
+        ServerTickEvents.END_SERVER_TICK.register(server -> {
+            TickScheduler.tick();
+            ActiveSpellTracker.tick(server.getOverworld());
+        });
 
         LOGGER.info("Regen Mod initialized successfully!");
     }

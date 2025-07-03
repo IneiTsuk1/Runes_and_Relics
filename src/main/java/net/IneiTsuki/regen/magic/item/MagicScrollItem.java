@@ -1,9 +1,11 @@
 package net.IneiTsuki.regen.magic.item;
 
-import net.IneiTsuki.regen.magic.core.MagicConstants;
+import net.IneiTsuki.regen.magic.effect.active.ActiveSpellEffect;
+import net.IneiTsuki.regen.magic.effect.active.ActiveSpellTracker;
+import net.IneiTsuki.regen.magic.core.constants.MagicConstants;
 import net.IneiTsuki.regen.magic.api.MagicEnums;
-import net.IneiTsuki.regen.magic.core.MagicInteractionRules;
-import net.IneiTsuki.regen.magic.core.TickScheduler;
+import net.IneiTsuki.regen.magic.core.utils.MagicInteractionRules;
+import net.IneiTsuki.regen.magic.core.scheduler.TickScheduler;
 import net.IneiTsuki.regen.magic.api.MagicEffect;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
@@ -25,7 +27,8 @@ import java.util.Objects;
  *
  * Magic scrolls contain immutable lists of clarifications and magic types
  * that define their spell effects. When used, they apply their magic effect
- * and are consumed (unless the player is in creative mode).
+ * with proper timing (casting delay and duration) and are consumed
+ * (unless the player is in creative mode).
  *
  * The scroll validates its combination stability and provides detailed
  * tooltips showing the magical components and their interactions.
@@ -99,28 +102,28 @@ public class MagicScrollItem extends Item {
                     return TypedActionResult.fail(itemStack);
                 }
 
+                // Get the casting delay for this specific effect
+                int castDelay = effect.getCastDelayTicks(world, user, clarifications, types);
+
                 // Play scroll sound
                 world.playSound(null, user.getX(), user.getY(), user.getZ(),
                         SoundEvents.ITEM_BOOK_PAGE_TURN, SoundCategory.PLAYERS,
                         MagicConstants.DEFAULT_SOUND_VOLUME, MagicConstants.DEFAULT_SOUND_PITCH);
 
-                user.sendMessage(Text.literal("You begin casting...").formatted(Formatting.GRAY), true);
+                if (castDelay > 0) {
+                    // Show casting message with actual delay time
+                    float castTimeSeconds = castDelay / 20.0f;
+                    user.sendMessage(Text.literal("Casting spell... (" + String.format("%.1f", castTimeSeconds) + "s)")
+                            .formatted(Formatting.GRAY), true);
 
-                TickScheduler.schedule(MagicConstants.DEFAULT_CAST_DELAY_TICKS, () -> {
-                    boolean success = effect.apply(world, user, clarifications, types);
-
-                    if (success) {
-                        if (!user.getAbilities().creativeMode) {
-                            itemStack.decrement(1);
-                        }
-                    } else {
-                        user.sendMessage(Text.literal(MagicConstants.ERROR_SPELL_BACKFIRE)
-                                .formatted(Formatting.RED), false);
-                        world.playSound(null, user.getX(), user.getY(), user.getZ(),
-                                SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS,
-                                MagicConstants.DEFAULT_SOUND_VOLUME, MagicConstants.DEFAULT_SOUND_PITCH);
-                    }
-                });
+                    // Schedule the spell execution
+                    TickScheduler.schedule(castDelay, () -> {
+                        executeSpell(world, user, itemStack);
+                    });
+                } else {
+                    // Execute immediately if no delay
+                    executeSpell(world, user, itemStack);
+                }
 
             } catch (Exception e) {
                 // Handle any unexpected errors gracefully
@@ -138,6 +141,68 @@ public class MagicScrollItem extends Item {
         }
 
         return TypedActionResult.success(itemStack, world.isClient());
+    }
+
+    /**
+     * Executes the actual spell effect, handling both instant and duration-based effects.
+     *
+     * @param world The world context
+     * @param user The player casting the spell
+     * @param itemStack The scroll item stack
+     */
+    private void executeSpell(World world, PlayerEntity user, ItemStack itemStack) {
+        try {
+            // Apply the spell effect
+            boolean success = effect.apply(world, user, clarifications, types);
+
+            if (success) {
+                // Check if this effect has a duration
+                int duration = effect.getActiveDurationTicks(world, user, clarifications, types);
+
+                if (duration > 0) {
+                    // Create and track the active spell effect
+                    ActiveSpellEffect activeSpell = new ActiveSpellEffect(
+                            user, effect, clarifications, types, duration
+                    );
+                    ActiveSpellTracker.add(activeSpell);
+
+                    // Notify user about ongoing effect
+                    float durationSeconds = duration / 20.0f;
+                    user.sendMessage(Text.literal("Spell active for " + String.format("%.1f", durationSeconds) + " seconds")
+                            .formatted(Formatting.GREEN), true);
+                } else {
+                    // Instant effect
+                    user.sendMessage(Text.literal("Spell cast successfully!")
+                            .formatted(Formatting.GREEN), true);
+                }
+
+                // Play success sound
+                world.playSound(null, user.getX(), user.getY(), user.getZ(),
+                        SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.PLAYERS,
+                        MagicConstants.DEFAULT_SOUND_VOLUME, 1.2f);
+
+                // Consume the scroll (unless creative mode)
+                if (!user.getAbilities().creativeMode) {
+                    itemStack.decrement(1);
+                }
+
+            } else {
+                // Spell failed
+                user.sendMessage(Text.literal(MagicConstants.ERROR_SPELL_BACKFIRE)
+                        .formatted(Formatting.RED), false);
+                world.playSound(null, user.getX(), user.getY(), user.getZ(),
+                        SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS,
+                        MagicConstants.DEFAULT_SOUND_VOLUME, MagicConstants.DEFAULT_SOUND_PITCH);
+            }
+
+        } catch (Exception e) {
+            // Handle spell execution errors
+            user.sendMessage(Text.literal("Spell casting failed: " + e.getMessage())
+                    .formatted(Formatting.RED), false);
+            world.playSound(null, user.getX(), user.getY(), user.getZ(),
+                    SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS,
+                    MagicConstants.DEFAULT_SOUND_VOLUME, MagicConstants.DEFAULT_SOUND_PITCH);
+        }
     }
 
     @Override
@@ -175,10 +240,8 @@ public class MagicScrollItem extends Item {
 
         tooltip.add(Text.empty()); // Empty line for spacing
 
-        tooltip.add(Text.literal("Casting Time: " + (effect.getCastDelayTicks() / 20.0) + "s")
-                .formatted(Formatting.DARK_PURPLE));
-
-
+        // Timing information (context-aware)
+        addTimingTooltip(tooltip, context);
 
         // Interaction effects
         String modifications = MagicInteractionRules.getModificationDescription(clarifications, types);
@@ -189,6 +252,44 @@ public class MagicScrollItem extends Item {
         tooltip.add(Text.empty()); // Empty line for spacing
         tooltip.add(Text.literal("Right-click to cast spell")
                 .formatted(Formatting.ITALIC, Formatting.DARK_GRAY));
+    }
+
+    /**
+     * Adds timing information to the tooltip.
+     * Note: This provides general timing info since we don't have world/player context in tooltip.
+     */
+    private void addTimingTooltip(List<Text> tooltip, TooltipContext context) {
+        try {
+            // For tooltip, we can only show default timing since we don't have world/player context
+            // In a real implementation, you might want to cache this or use a different approach
+
+            // Show casting time (using default from effect)
+            int defaultCastDelay = effect.getCastDelayTicks(null, null, clarifications, types);
+            if (defaultCastDelay > 0) {
+                float castTimeSeconds = defaultCastDelay / 20.0f;
+                tooltip.add(Text.literal("Cast Time: " + String.format("%.1f", castTimeSeconds) + "s")
+                        .formatted(Formatting.DARK_PURPLE));
+            } else {
+                tooltip.add(Text.literal("Cast Time: Instant")
+                        .formatted(Formatting.DARK_PURPLE));
+            }
+
+            // Show duration (using default from effect)
+            int defaultDuration = effect.getActiveDurationTicks(null, null, clarifications, types);
+            if (defaultDuration > 0) {
+                float durationSeconds = defaultDuration / 20.0f;
+                tooltip.add(Text.literal("Duration: " + String.format("%.1f", durationSeconds) + "s")
+                        .formatted(Formatting.DARK_PURPLE));
+            } else {
+                tooltip.add(Text.literal("Duration: Infinite")
+                        .formatted(Formatting.DARK_PURPLE));
+            }
+
+        } catch (Exception e) {
+            // If timing info fails, show generic info
+            tooltip.add(Text.literal("Timing: Variable")
+                    .formatted(Formatting.DARK_PURPLE));
+        }
     }
 
     /**
@@ -225,5 +326,42 @@ public class MagicScrollItem extends Item {
      */
     public boolean isStable() {
         return isStable;
+    }
+
+    /**
+     * Gets the estimated complexity of this scroll based on its components.
+     *
+     * @return The complexity score (higher = more complex)
+     */
+    public int getComplexity() {
+        return clarifications.size() + types.size();
+    }
+
+    /**
+     * Checks if this scroll has any duration-based effects.
+     * This is a helper method for UI/display purposes.
+     *
+     * @return true if the scroll has duration effects, false for instant effects
+     */
+    public boolean hasDurationEffect() {
+        try {
+            return effect.getActiveDurationTicks(null, null, clarifications, types) > 0;
+        } catch (Exception e) {
+            return false; // Assume instant if we can't determine
+        }
+    }
+
+    /**
+     * Checks if this scroll has a casting delay.
+     * This is a helper method for UI/display purposes.
+     *
+     * @return true if the scroll has a casting delay, false for instant casting
+     */
+    public boolean hasCastingDelay() {
+        try {
+            return effect.getCastDelayTicks(null, null, clarifications, types) > 0;
+        } catch (Exception e) {
+            return false; // Assume instant if we can't determine
+        }
     }
 }
