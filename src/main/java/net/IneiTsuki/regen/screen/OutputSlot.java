@@ -14,6 +14,7 @@ public class OutputSlot extends Slot {
 
     private final PlayerEntity player;
     private final SpellInscriberBlockEntity blockEntity;
+    private boolean isShiftClick = false;
 
     /**
      * Creates a new OutputSlot instance.
@@ -29,11 +30,6 @@ public class OutputSlot extends Slot {
         super(inventory, index, x, y);
         this.player = player;
         this.blockEntity = blockEntity;
-
-        // Uncomment the following if you want to log a warning when blockEntity is null (usually client side)
-        // if (blockEntity == null) {
-        //     System.err.println("Warning: OutputSlot constructed with null blockEntity (likely on client side).");
-        // }
     }
 
     /**
@@ -59,8 +55,19 @@ public class OutputSlot extends Slot {
     }
 
     /**
+     * Sets whether this interaction is a shift-click.
+     * Called from the screen handler's quickMove method.
+     *
+     * @param shiftClick true if this is a shift-click interaction
+     */
+    public void setShiftClick(boolean shiftClick) {
+        this.isShiftClick = shiftClick;
+    }
+
+    /**
      * Called when the player takes an item from the slot.
      * Triggers the crafting process in the SpellInscriberBlockEntity.
+     * Supports shift-click crafting by checking the shift-click flag.
      *
      * @param player The player taking the item.
      * @param stack  The item stack taken.
@@ -72,7 +79,20 @@ public class OutputSlot extends Slot {
         if (blockEntity != null) {
             var world = blockEntity.getWorld();
             if (world != null && !world.isClient) {
-                blockEntity.craftItem();
+                try {
+                    if (isShiftClick) {
+                        blockEntity.craftAllPossible();
+                    } else {
+                        blockEntity.craftSingle();
+                    }
+                    blockEntity.updateOutputSlot();
+                } catch (Exception e) {
+                    // Log error but don't crash
+                    System.err.println("Error during crafting: " + e.getMessage());
+                } finally {
+                    // Reset shift-click flag
+                    isShiftClick = false;
+                }
             }
         }
     }

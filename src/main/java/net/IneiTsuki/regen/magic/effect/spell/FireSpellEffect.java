@@ -3,19 +3,18 @@ package net.IneiTsuki.regen.magic.effect.spell;
 import net.IneiTsuki.regen.Regen;
 import net.IneiTsuki.regen.magic.api.MagicEffect;
 import net.IneiTsuki.regen.magic.api.MagicEnums;
+import net.IneiTsuki.regen.magic.components.ManaComponent;
+import net.IneiTsuki.regen.magic.components.ModComponents;
 import net.IneiTsuki.regen.magic.core.constants.MagicConstants;
 import net.IneiTsuki.regen.magic.core.utils.MagicInteractionRules;
 import net.IneiTsuki.regen.magic.effect.active.ActiveSpellEffect;
 import net.IneiTsuki.regen.magic.effect.active.ActiveSpellTracker;
 import net.minecraft.block.Blocks;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Box;
 import net.minecraft.world.World;
 
 import java.util.*;
@@ -40,6 +39,18 @@ public class FireSpellEffect implements MagicEffect {
             Objects.requireNonNull(world);
             Objects.requireNonNull(user);
 
+            ManaComponent mana = ModComponents.MANA.get(user);
+            int manaCost = calculateManaCost(cls, tys);
+
+            if (!mana.hasEnoughMana(manaCost)) {
+                user.sendMessage(Text.literal("Not enough mana to cast this spell!"), true);
+                return false;
+            }
+
+            // Consume mana and sync
+            mana.consumeMana(manaCost);
+            mana.syncToClient();
+
             if (!types.contains(MagicEnums.MagicType.FIRE)) {
                 return false;
             }
@@ -52,29 +63,40 @@ public class FireSpellEffect implements MagicEffect {
 
             BlockPos center = user.getBlockPos();
 
-            boolean isControlled = clarifications.contains(MagicEnums.Clarification.CONTROL);
-            boolean isDestructive = clarifications.contains(MagicEnums.Clarification.DESTRUCTION);
             boolean isConstructive = clarifications.contains(MagicEnums.Clarification.CONSTRUCTION);
-            boolean hasMovement = clarifications.contains(MagicEnums.Clarification.MOVE);
 
             // Place fire blocks and track positions
             placedFirePositions.clear();
             placedFirePositions.addAll(placeFireBlocks(world, center, effectiveRadius, isConstructive, finalIntensity));
 
-            if (isDestructive) {
-                damageEntitiesInRange(world, center, effectiveRadius, user, isControlled, finalIntensity);
+            if (placedFirePositions.isEmpty()) {
+                Regen.LOGGER.warn("FireSpellEffect: No fire blocks placed, not registering active spell");
+                return false;
             }
 
-            if (hasMovement) {
-                applyMovementEffect(world, user, isControlled, finalIntensity);
+// Consume mana and sync
+            mana.consumeMana(manaCost);
+            mana.syncToClient();
+
+            if (!types.contains(MagicEnums.MagicType.FIRE)) {
+                return false;
             }
 
-            String intensityDesc = getIntensityDescription(finalIntensity);
-            String effectDesc = getEffectDescription(clarifications);
+            int duration = getActiveDurationTicks(world, user, cls, tys);
 
+// CREATE AND REGISTER THE ACTIVE SPELL EFFECT
+            ActiveSpellEffect activeSpell = new ActiveSpellEffect(
+                    user, this, cls, tys, duration
+            );
+            ActiveSpellTracker.add(activeSpell);
+
+// Send message only after successful activation
             user.sendMessage(Text.literal(String.format(
                     "You unleash %s %s fire spell! (%d fires created)",
-                    intensityDesc, effectDesc, placedFirePositions.size())), false);
+                    getIntensityDescription(finalIntensity),
+                    getEffectDescription(clarifications),
+                    placedFirePositions.size()
+            )), false);
 
             world.playSound(null, center,
                     finalIntensity > 1.5 ? SoundEvents.ENTITY_BLAZE_SHOOT : SoundEvents.ITEM_FIRECHARGE_USE,
@@ -82,32 +104,22 @@ public class FireSpellEffect implements MagicEffect {
                     MagicConstants.DEFAULT_SOUND_VOLUME * (float) Math.min(finalIntensity, 2.0),
                     MagicConstants.DEFAULT_SOUND_PITCH);
 
-            // CREATE AND REGISTER THE ACTIVE SPELL EFFECT
-            if (!placedFirePositions.isEmpty()) {
-                int duration = getActiveDurationTicks(world, user, cls, tys);
-
-                // DEBUG LOGGING
-                //Regen.LOGGER.info("FireSpellEffect: Registering active spell with duration: {}", duration);
-                //Regen.LOGGER.info("FireSpellEffect: Active spell count before: {}", ActiveSpellTracker.getCount());
-
-                ActiveSpellEffect activeSpell = new ActiveSpellEffect(
-                        user, this, cls, tys, duration
-                );
-                ActiveSpellTracker.add(activeSpell);
-
-                //Regen.LOGGER.info("FireSpellEffect: Active spell count after: {}", ActiveSpellTracker.getCount());
-                //Regen.LOGGER.info("FireSpellEffect: Successfully registered active spell");
-
-                return true;
-            }
-
-            Regen.LOGGER.warn("FireSpellEffect: No fire blocks placed, not registering active spell");
-            return false;
+            return true;
 
         } catch (Exception e) {
             Regen.LOGGER.error("FireSpellEffect: Error in apply method", e);
             return false;
         }
+    }
+
+    private int calculateManaCost(List<MagicEnums.Clarification> clarifications, List<MagicEnums.MagicType> types) {
+        // Simple example: base 10 mana, +5 per clarification, +10 if FIRE type present
+        int cost = 10;
+        cost += clarifications.size() * 5;
+        if (types.contains(MagicEnums.MagicType.FIRE)) {
+            cost += 10;
+        }
+        return cost;
     }
 
     @Override
@@ -147,11 +159,9 @@ public class FireSpellEffect implements MagicEffect {
         //Regen.LOGGER.info("FireSpellEffect onEnd called for user: {}", user.getName().getString());
 
         // Remove all placed fire blocks
-        int removedCount = 0;
         for (BlockPos pos : placedFirePositions) {
             if (world.getBlockState(pos).isOf(Blocks.FIRE)) {
                 world.setBlockState(pos, Blocks.AIR.getDefaultState());
-                removedCount++;
             }
         }
         placedFirePositions.clear();
@@ -183,43 +193,9 @@ public class FireSpellEffect implements MagicEffect {
         }
         BlockPos below = pos.down();
         if (isConstructive) {
-            return world.getBlockState(below).isSolid();
+            return world.getBlockState(below).isSolidBlock(world, below);
         } else {
             return world.getBlockState(below).isBurnable();
-        }
-    }
-
-    private static void damageEntitiesInRange(World world, BlockPos center, int radius,
-                                              PlayerEntity caster, boolean isControlled,
-                                              double intensity) {
-        double actualRadius = radius + 0.5;
-        Box damageBox = new Box(center).expand(actualRadius);
-        List<Entity> entities = world.getOtherEntities(null, damageBox);
-        for (Entity entity : entities) {
-            if (!(entity instanceof LivingEntity livingEntity)) continue;
-            if (isControlled && entity == caster) continue;
-
-            double distance = entity.getPos().distanceTo(center.toCenterPos());
-            if (distance > actualRadius) continue;
-
-            double damageMultiplier = 1.0 - (distance / actualRadius);
-            float damage = (float) (4.0 * intensity * damageMultiplier);
-
-            livingEntity.damage(world.getDamageSources().create(net.minecraft.entity.damage.DamageTypes.IN_FIRE), damage);
-
-            int fireTicks = (int) (60 * intensity * damageMultiplier);
-            livingEntity.setOnFireFor(Math.max(1, fireTicks / 20));
-        }
-    }
-
-    private static void applyMovementEffect(World world, PlayerEntity user,
-                                            boolean isControlled, double intensity) {
-        if (isControlled) {
-            user.sendMessage(Text.literal("You feel protected from your own flames!"), true);
-            // Optionally add fire resistance potion effect here
-        } else {
-            int fireDuration = Math.max(1, (int) (MagicConstants.FIRE_MOVE_DURATION_SECONDS * intensity));
-            user.setOnFireFor(fireDuration);
         }
     }
 

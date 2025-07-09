@@ -22,14 +22,15 @@ import java.util.stream.Collectors;
 
 /**
  * Registry and factory for magic scroll items.
- *
+ * <p>
  * This class manages the registration of all magic scroll combinations,
  * provides thread-safe access to registered scrolls, and handles the
  * complex logic of scroll name generation and custom effect assignment.
- *
+ * <p>
  * Scrolls are registered for every combination of clarifications and magic types,
  * with special effects assigned to specific combinations as needed.
  */
+@SuppressWarnings("unused")
 public final class MagicScrollItems {
 
     /**
@@ -102,6 +103,7 @@ public final class MagicScrollItems {
     private static void registerBasicScrolls() {
         int registeredCount = 0;
         int totalCombinations = Clarification.values().length * MagicType.values().length;
+        int defaultManaCost = 10; // Default mana cost for basic scrolls
 
         for (Clarification clarification : Clarification.values()) {
             for (MagicType magicType : MagicType.values()) {
@@ -115,7 +117,8 @@ public final class MagicScrollItems {
                     // Override with custom effects for specific combinations
                     effect = getCustomEffectOrDefault(clarifications, types, effect);
 
-                    registerMagicScroll(clarifications, types, effect);
+                    // Register scroll with default mana cost
+                    registerMagicScroll(clarifications, types, effect, defaultManaCost);
                     registeredCount++;
 
                 } catch (Exception e) {
@@ -143,7 +146,8 @@ public final class MagicScrollItems {
             registerMagicScroll(
                     List.of(Clarification.AREA, Clarification.MANY),
                     List.of(MagicType.FIRE),
-                    wrapWithDelayAndDuration(fireEffect, 40, 200)
+                    wrapWithDelayAndDuration(fireEffect, 40, 200),
+                    20 // example mana cost
             );
             registeredCount++;
 
@@ -151,7 +155,8 @@ public final class MagicScrollItems {
             registerMagicScroll(
                     List.of(Clarification.CONTROL),
                     List.of(MagicType.FIRE, MagicType.WATER),
-                    wrapWithDelayAndDuration(createSteamEffect(), 60, 0)
+                    wrapWithDelayAndDuration(createSteamEffect(), 60, 0),
+                    30 // example mana cost
             );
             registeredCount++;
 
@@ -159,7 +164,8 @@ public final class MagicScrollItems {
             registerMagicScroll(
                     List.of(Clarification.MUCH, Clarification.DESTRUCTION),
                     List.of(MagicType.FIRE, MagicType.ICE),
-                    wrapWithDelayAndDuration(createThermalShockEffect(), 80, 0)
+                    wrapWithDelayAndDuration(createThermalShockEffect(), 80, 0),
+                    40 // example mana cost
             );
             registeredCount++;
 
@@ -181,7 +187,8 @@ public final class MagicScrollItems {
      */
     private static void registerMagicScroll(List<Clarification> clarifications,
                                             List<MagicType> types,
-                                            MagicEffect effect) {
+                                            MagicEffect effect,
+                                            int manaCost) {
         // Validate inputs
         validateRegistrationParameters(clarifications, types, effect);
 
@@ -197,7 +204,8 @@ public final class MagicScrollItems {
                     new Item.Settings().maxCount(MagicConstants.SCROLL_MAX_STACK_SIZE),
                     clarifications,
                     types,
-                    effect
+                    effect,
+                    manaCost
             );
 
             Registry.register(Registries.ITEM, Regen.id(name), item);
@@ -304,15 +312,9 @@ public final class MagicScrollItems {
                                                         List<MagicType> types,
                                                         MagicEffect defaultEffect) {
         // Control + Fire combination gets fire spell
-        if (isSingleCombination(clarifications, types, Clarification.CONTROL, MagicType.FIRE)) {
+        if (isSingleCombination(clarifications, types)) {
             return MagicScrollEffects::fireSpell;
         }
-
-        // Add more custom combinations here as needed
-        // Examples:
-        // if (isSingleCombination(clarifications, types, Clarification.DESTRUCTION, MagicType.EARTH)) {
-        //     return MagicScrollEffects::earthquakeSpell;
-        // }
 
         return defaultEffect;
     }
@@ -321,13 +323,11 @@ public final class MagicScrollItems {
      * Helper method to check if lists contain exactly one specific clarification and type.
      */
     private static boolean isSingleCombination(List<Clarification> clarifications,
-                                               List<MagicType> types,
-                                               Clarification expectedClarification,
-                                               MagicType expectedType) {
+                                               List<MagicType> types) {
         return clarifications.size() == 1 &&
                 types.size() == 1 &&
-                clarifications.contains(expectedClarification) &&
-                types.contains(expectedType);
+                clarifications.contains(Clarification.CONTROL) &&
+                types.contains(MagicType.FIRE);
     }
 
     /**

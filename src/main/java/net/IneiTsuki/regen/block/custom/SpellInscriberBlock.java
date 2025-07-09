@@ -1,7 +1,6 @@
 package net.IneiTsuki.regen.block.custom;
 
 import com.mojang.serialization.MapCodec;
-import net.IneiTsuki.regen.block.entity.ModBlockEntities;
 import net.IneiTsuki.regen.block.entity.SpellInscriberBlockEntity;
 import net.minecraft.block.*;
 import net.minecraft.block.entity.BlockEntity;
@@ -64,20 +63,19 @@ public class SpellInscriberBlock extends BlockWithEntity {
     @Override
     public VoxelShape getOutlineShape(BlockState state, BlockView world, BlockPos pos, ShapeContext context) {
         Direction facing = state.get(FACING);
-        return rotateShape(facing, SHAPE);
+        return rotateShape(facing);
     }
 
     /**
      * Rotates the block shape based on its facing direction.
      *
      * @param direction The direction the block is facing.
-     * @param shape     The original voxel shape.
      * @return The rotated voxel shape.
      */
-    private VoxelShape rotateShape(Direction direction, VoxelShape shape) {
-        VoxelShape[] buffer = new VoxelShape[]{shape, VoxelShapes.empty()};
+    private VoxelShape rotateShape(Direction direction) {
+        VoxelShape[] buffer = new VoxelShape[]{SpellInscriberBlock.SHAPE, VoxelShapes.empty()};
 
-        shape.forEachBox((minX, minY, minZ, maxX, maxY, maxZ) -> {
+        SpellInscriberBlock.SHAPE.forEachBox((minX, minY, minZ, maxX, maxY, maxZ) -> {
             switch (direction) {
                 case NORTH -> buffer[1] = VoxelShapes.union(buffer[1],
                         VoxelShapes.cuboid(minX, minY, minZ, maxX, maxY, maxZ));
@@ -188,7 +186,7 @@ public class SpellInscriberBlock extends BlockWithEntity {
         }
         return (world1, pos, state1, blockEntity) -> {
             if (blockEntity instanceof SpellInscriberBlockEntity entity) {
-                entity.tick(world1, pos, state1);
+                SpellInscriberBlockEntity.tick(world1, pos, state1, entity);
             }
         };
     }

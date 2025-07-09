@@ -3,15 +3,22 @@ package net.IneiTsuki.regen;
 import net.IneiTsuki.regen.block.ModBlocks;
 import net.IneiTsuki.regen.block.entity.ModBlockEntities;
 import net.IneiTsuki.regen.item.ModItems;
+import net.IneiTsuki.regen.magic.item.ManaRegenTask;
+import net.IneiTsuki.regen.magic.network.ManaSyncPacket;
+import net.IneiTsuki.regen.magic.components.ManaComponent;
+import net.IneiTsuki.regen.magic.components.ModComponents;
 import net.IneiTsuki.regen.magic.effect.active.ActiveSpellTracker;
 import net.IneiTsuki.regen.magic.core.scheduler.TickScheduler;
 import net.IneiTsuki.regen.magic.item.MagicScrollItems;
-import net.IneiTsuki.regen.recipe.ModRecipes;
 import net.IneiTsuki.regen.client.screen.handlers.ModScreenHandlers;
+import net.IneiTsuki.regen.recipe.ModRecipes;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
+import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.item.ItemGroups;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Identifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,10 +51,19 @@ public class Regen implements ModInitializer {
         ModScreenHandlers.registerAll();
         MagicScrollItems.registerItems();
 
+        // In your main mod class
+        PayloadTypeRegistry.playS2C().register(ManaSyncPacket.ID, ManaSyncPacket.CODEC);
+
+
         // Add magic scrolls and related items to the TOOLS creative tab
         ItemGroupEvents.modifyEntriesEvent(ItemGroups.TOOLS).register(MagicScrollItems::addItemsToItemGroup);
 
-        ServerTickEvents.END_SERVER_TICK.register(server -> TickScheduler.tick());
+        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
+            ServerPlayerEntity player = handler.getPlayer();
+            ManaComponent mana = ModComponents.MANA.get(player);
+            ManaRegenTask task = new ManaRegenTask(mana, 2, 20); // regen 2 mana every 20 ticks (1 second)
+            TickScheduler.schedule(20, task);
+        });
 
         ServerTickEvents.END_SERVER_TICK.register(server -> {
             TickScheduler.tick();

@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+@SuppressWarnings("unused")
 public class TickScheduler {
 
     private static final Logger LOGGER = Logger.getLogger(TickScheduler.class.getName());
@@ -34,15 +35,15 @@ public class TickScheduler {
             scheduledTask.ticksLeft--;
 
             if (scheduledTask.ticksLeft <= 0) {
-                LOGGER.info("Executing scheduled task...");
+                //LOGGER.info("Executing scheduled task...");
                 try {
                     scheduledTask.task.run();
-                    LOGGER.info("Scheduled task executed successfully.");
+                    //LOGGER.info("Scheduled task executed successfully.");
                 } catch (Exception e) {
-                    LOGGER.log(Level.SEVERE, "Error executing scheduled task", e);
+                    //LOGGER.log(Level.SEVERE, "Error executing scheduled task", e);
                 }
                 scheduledTasks.remove(i);
-                LOGGER.info("Scheduled task removed from queue.");
+                //LOGGER.info("Scheduled task removed from queue.");
             }
         }
     }
@@ -52,12 +53,12 @@ public class TickScheduler {
      */
     public static void schedule(int delayTicks, Runnable task) {
         if (delayTicks <= 0) {
-            LOGGER.info("Executing immediate task...");
+            //LOGGER.info("Executing immediate task...");
             try {
                 task.run();
-                LOGGER.info("Immediate task executed successfully.");
+                //LOGGER.info("Immediate task executed successfully.");
             } catch (Exception e) {
-                LOGGER.log(Level.SEVERE, "Error executing immediate task", e);
+                //LOGGER.log(Level.SEVERE, "Error executing immediate task", e);
             }
         } else {
             scheduledTasks.add(new ScheduledTask(delayTicks, task));

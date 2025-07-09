@@ -1,3 +1,4 @@
 {
-  "block.regen.spell_inscriber": "Spell Inscribing Station"
+  "block.regen.spell_inscriber": "Spell Inscribing Station",
+  "container.regen.spell_inscriber": "Spell Inscriber"
 }

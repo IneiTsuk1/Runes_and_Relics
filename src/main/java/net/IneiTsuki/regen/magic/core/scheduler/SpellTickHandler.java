@@ -1,4 +1,4 @@
-package net.IneiTsuki.regen.magic.handler;
+package net.IneiTsuki.regen.magic.core.scheduler;
 
 import net.IneiTsuki.regen.magic.effect.active.ActiveSpellTracker;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;

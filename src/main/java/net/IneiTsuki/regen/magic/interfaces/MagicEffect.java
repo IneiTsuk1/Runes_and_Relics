@@ -1,6 +1,6 @@
 package net.IneiTsuki.regen.magic.interfaces;
 
-import net.IneiTsuki.regen.magic.MagicEnums;
+import net.IneiTsuki.regen.magic.api.MagicEnums;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.world.World;
 

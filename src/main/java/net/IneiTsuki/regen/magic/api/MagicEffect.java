@@ -89,6 +89,23 @@ public interface MagicEffect {
     }
 
     /**
+     * Gets the mana cost for casting this effect.
+     * Override to provide custom mana cost calculations.
+     *
+     * @param world The world context
+     * @param user The player casting the spell
+     * @param clarifications The clarifications for the spell
+     * @param types The magic types for the spell
+     * @return The mana cost required to cast this effect
+     */
+    default int getManaCost(World world, PlayerEntity user,
+                            List<MagicEnums.Clarification> clarifications,
+                            List<MagicEnums.MagicType> types) {
+        // Default mana cost, override for more complex logic
+        return MagicConstants.DEFAULT_MANA_COST;
+    }
+
+    /**
      * Called when the effect duration expires.
      * Override for cleanup logic or ending effects.
      *

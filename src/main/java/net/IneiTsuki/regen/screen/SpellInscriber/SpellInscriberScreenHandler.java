@@ -1,7 +1,7 @@
 package net.IneiTsuki.regen.screen.SpellInscriber;
 
-import net.IneiTsuki.regen.block.entity.ImplementedInventory;
 import net.IneiTsuki.regen.block.entity.SpellInscriberBlockEntity;
+import net.IneiTsuki.regen.block.entity.ImplementedInventory;
 import net.IneiTsuki.regen.screen.ModScreenHandlers;
 import net.IneiTsuki.regen.screen.OutputSlot;
 import net.minecraft.entity.player.PlayerEntity;
@@ -149,16 +149,34 @@ public class SpellInscriberScreenHandler extends ScreenHandler {
         ItemStack newStack = originalStack.copy();
 
         int customInvSize = inventory.size();
-        int totalSlots = this.slots.size();
+        int playerInvStart = customInvSize;
+        int playerInvEnd = this.slots.size();
 
-        if (index < customInvSize) {
+        if (index == SpellInscriberBlockEntity.OUTPUT_SLOT) {
+            if (blockEntity != null) {
+                int craftedCount = blockEntity.craftAllPossible();
+                if (craftedCount == 0) return ItemStack.EMPTY;
+
+                ItemStack outputStack = blockEntity.getStack(SpellInscriberBlockEntity.OUTPUT_SLOT);
+                if (!outputStack.isEmpty()) {
+                    if (!this.insertItem(outputStack, playerInvStart, playerInvEnd, true)) {
+                        return ItemStack.EMPTY;
+                    }
+                    blockEntity.setStack(SpellInscriberBlockEntity.OUTPUT_SLOT, ItemStack.EMPTY);
+                    blockEntity.markDirty();
+                    blockEntity.notifyBlockUpdate();
+                }
+                return newStack;
+            }
+            return ItemStack.EMPTY;
+        } else if (index < customInvSize) {
             // Move from custom inventory to player inventory
-            if (!this.insertItem(originalStack, customInvSize, totalSlots, true)) {
+            if (!this.insertItem(originalStack, playerInvStart, playerInvEnd, true)) {
                 return ItemStack.EMPTY;
             }
         } else {
             // Move from player inventory to custom input slots (0–7)
-            if (!this.insertItem(originalStack, 0, 8, false)) {
+            if (!this.insertItem(originalStack, 0, SpellInscriberBlockEntity.INPUT_SLOTS, false)) {
                 return ItemStack.EMPTY;
             }
         }

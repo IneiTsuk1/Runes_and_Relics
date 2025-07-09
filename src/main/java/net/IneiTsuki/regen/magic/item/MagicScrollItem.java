@@ -1,5 +1,7 @@
 package net.IneiTsuki.regen.magic.item;
 
+import net.IneiTsuki.regen.magic.components.ManaComponent;
+import net.IneiTsuki.regen.magic.components.ModComponents;
 import net.IneiTsuki.regen.magic.effect.active.ActiveSpellEffect;
 import net.IneiTsuki.regen.magic.effect.active.ActiveSpellTracker;
 import net.IneiTsuki.regen.magic.core.constants.MagicConstants;
@@ -38,6 +40,7 @@ public class MagicScrollItem extends Item {
     private final List<MagicEnums.MagicType> types;
     private final MagicEffect effect;
     private final boolean isStable;
+    private final int manaCost;
 
     /**
      * Creates a new magic scroll item.
@@ -51,7 +54,7 @@ public class MagicScrollItem extends Item {
     public MagicScrollItem(Settings settings,
                            List<MagicEnums.Clarification> clarifications,
                            List<MagicEnums.MagicType> types,
-                           MagicEffect effect) {
+                           MagicEffect effect, int manaCost) {
         super(settings);
 
         // Validate inputs
@@ -72,20 +75,19 @@ public class MagicScrollItem extends Item {
         this.types = List.copyOf(types);
         this.effect = effect;
         this.isStable = MagicInteractionRules.isStableCombination(clarifications, types);
+        this.manaCost = manaCost;
     }
 
     @Override
     public TypedActionResult<ItemStack> use(World world, PlayerEntity user, Hand hand) {
         ItemStack itemStack = user.getStackInHand(hand);
 
-        // Validate we can use this item
         if (world == null || user == null) {
             return TypedActionResult.fail(itemStack);
         }
 
         if (!world.isClient()) {
             try {
-                // Check if combination is stable
                 if (!isStable) {
                     user.sendMessage(Text.literal(MagicConstants.ERROR_INVALID_COMBINATION)
                             .formatted(Formatting.RED), false);
@@ -95,47 +97,50 @@ public class MagicScrollItem extends Item {
                     return TypedActionResult.fail(itemStack);
                 }
 
-                // Validate effect can be applied
+                // Get mana cost for this spell cast
+                int manaCost = effect.getManaCost(world, user, clarifications, types);
+
+                ManaComponent mana = ModComponents.MANA.get(user);
+
+                if (mana == null || !mana.hasEnoughMana(manaCost)) {
+                    user.sendMessage(Text.literal("Not enough mana to cast this spell!")
+                            .formatted(Formatting.RED), false);
+                    world.playSound(null, user.getX(), user.getY(), user.getZ(),
+                            SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS,
+                            MagicConstants.DEFAULT_SOUND_VOLUME, MagicConstants.DEFAULT_SOUND_PITCH);
+                    return TypedActionResult.fail(itemStack);
+                }
+
                 if (!effect.canApply(world, user, clarifications, types)) {
                     user.sendMessage(Text.literal(MagicConstants.ERROR_INSUFFICIENT_POWER)
                             .formatted(Formatting.YELLOW), false);
                     return TypedActionResult.fail(itemStack);
                 }
 
-                // Get the casting delay for this specific effect
                 int castDelay = effect.getCastDelayTicks(world, user, clarifications, types);
 
-                // Play scroll sound
                 world.playSound(null, user.getX(), user.getY(), user.getZ(),
                         SoundEvents.ITEM_BOOK_PAGE_TURN, SoundCategory.PLAYERS,
                         MagicConstants.DEFAULT_SOUND_VOLUME, MagicConstants.DEFAULT_SOUND_PITCH);
 
                 if (castDelay > 0) {
-                    // Show casting message with actual delay time
                     float castTimeSeconds = castDelay / 20.0f;
                     user.sendMessage(Text.literal("Casting spell... (" + String.format("%.1f", castTimeSeconds) + "s)")
                             .formatted(Formatting.GRAY), true);
 
-                    // Schedule the spell execution
                     TickScheduler.schedule(castDelay, () -> {
-                        executeSpell(world, user, itemStack);
+                        executeSpell(world, user, itemStack, manaCost);
                     });
                 } else {
-                    // Execute immediately if no delay
-                    executeSpell(world, user, itemStack);
+                    executeSpell(world, user, itemStack, manaCost);
                 }
 
             } catch (Exception e) {
-                // Handle any unexpected errors gracefully
                 user.sendMessage(Text.literal(MagicConstants.ERROR_SPELL_BACKFIRE)
                         .formatted(Formatting.RED), false);
                 world.playSound(null, user.getX(), user.getY(), user.getZ(),
                         SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS,
                         MagicConstants.DEFAULT_SOUND_VOLUME, MagicConstants.DEFAULT_SOUND_PITCH);
-
-                // Log the error for debugging (you might want to use your mod's logger)
-                // Regen.LOGGER.error("Error applying magic effect", e);
-
                 return TypedActionResult.fail(itemStack);
             }
         }
@@ -144,50 +149,50 @@ public class MagicScrollItem extends Item {
     }
 
     /**
-     * Executes the actual spell effect, handling both instant and duration-based effects.
-     *
-     * @param world The world context
-     * @param user The player casting the spell
-     * @param itemStack The scroll item stack
+     * Modified executeSpell method to consume mana after casting delay.
      */
-    private void executeSpell(World world, PlayerEntity user, ItemStack itemStack) {
+    private void executeSpell(World world, PlayerEntity user, ItemStack itemStack, int manaCost) {
         try {
-            // Apply the spell effect
+            ManaComponent mana = ManaComponents.getMana(user);
+
+            if (mana == null) {
+                user.sendMessage(Text.literal("Mana system error: Cannot find mana component!")
+                        .formatted(Formatting.RED), false);
+                return;
+            }
+
+            // Consume mana first
+            mana.consumeMana(manaCost);
+            mana.syncToClient();
+
             boolean success = effect.apply(world, user, clarifications, types);
 
             if (success) {
-                // Check if this effect has a duration
                 int duration = effect.getActiveDurationTicks(world, user, clarifications, types);
 
                 if (duration > 0) {
-                    // Create and track the active spell effect
                     ActiveSpellEffect activeSpell = new ActiveSpellEffect(
                             user, effect, clarifications, types, duration
                     );
                     ActiveSpellTracker.add(activeSpell);
 
-                    // Notify user about ongoing effect
                     float durationSeconds = duration / 20.0f;
                     user.sendMessage(Text.literal("Spell active for " + String.format("%.1f", durationSeconds) + " seconds")
                             .formatted(Formatting.GREEN), true);
                 } else {
-                    // Instant effect
                     user.sendMessage(Text.literal("Spell cast successfully!")
                             .formatted(Formatting.GREEN), true);
                 }
 
-                // Play success sound
                 world.playSound(null, user.getX(), user.getY(), user.getZ(),
                         SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.PLAYERS,
                         MagicConstants.DEFAULT_SOUND_VOLUME, 1.2f);
 
-                // Consume the scroll (unless creative mode)
                 if (!user.getAbilities().creativeMode) {
                     itemStack.decrement(1);
                 }
 
             } else {
-                // Spell failed
                 user.sendMessage(Text.literal(MagicConstants.ERROR_SPELL_BACKFIRE)
                         .formatted(Formatting.RED), false);
                 world.playSound(null, user.getX(), user.getY(), user.getZ(),
@@ -196,7 +201,6 @@ public class MagicScrollItem extends Item {
             }
 
         } catch (Exception e) {
-            // Handle spell execution errors
             user.sendMessage(Text.literal("Spell casting failed: " + e.getMessage())
                     .formatted(Formatting.RED), false);
             world.playSound(null, user.getX(), user.getY(), user.getZ(),
@@ -204,6 +208,13 @@ public class MagicScrollItem extends Item {
                     MagicConstants.DEFAULT_SOUND_VOLUME, MagicConstants.DEFAULT_SOUND_PITCH);
         }
     }
+
+    public class ManaComponents {
+        public static ManaComponent getMana(PlayerEntity player) {
+            return ModComponents.MANA.get(player);
+        }
+    }
+
 
     @Override
     public void appendTooltip(ItemStack stack, TooltipContext context, List<Text> tooltip, TooltipType type) {

@@ -3,7 +3,7 @@ package net.IneiTsuki.regen.client.screen.SpellInscriber;
 import net.IneiTsuki.regen.block.entity.ImplementedInventory;
 import net.IneiTsuki.regen.block.entity.SpellInscriberBlockEntity;
 import net.IneiTsuki.regen.client.screen.handlers.ModScreenHandlers;
-import net.IneiTsuki.regen.client.screen.widgets.OutputSlot;
+import net.IneiTsuki.regen.screen.OutputSlot;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.Inventory;
@@ -12,6 +12,9 @@ import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.util.collection.DefaultedList;
 import org.jetbrains.annotations.Nullable;
+
+import static net.IneiTsuki.regen.block.entity.SpellInscriberBlockEntity.INPUT_SLOTS;
+import static net.IneiTsuki.regen.block.entity.SpellInscriberBlockEntity.OUTPUT_SLOT;
 
 /**
  * ScreenHandler for the Spell Inscriber block.
@@ -146,19 +149,64 @@ public class SpellInscriberScreenHandler extends ScreenHandler {
         if (!slot.hasStack()) return ItemStack.EMPTY;
 
         ItemStack originalStack = slot.getStack();
-        ItemStack newStack = originalStack.copy();
+        ItemStack stackCopy = originalStack.copy();
 
-        int customInvSize = inventory.size();
-        int totalSlots = this.slots.size();
+        int customInvSize = inventory.size(); // e.g. 11
+        int playerInvStart = customInvSize;
+        int playerInvEnd = this.slots.size();
 
-        if (index < customInvSize) {
-            // Move from custom inventory to player inventory
-            if (!this.insertItem(originalStack, customInvSize, totalSlots, true)) {
+        if (index == OUTPUT_SLOT) {
+            // Handle output slot shift-click - craft as many as possible
+            if (blockEntity != null) {
+                // Keep crafting and transferring until we can't anymore
+                ItemStack transferredStack = ItemStack.EMPTY;
+                int craftAttempts = 0;
+                final int maxCraftAttempts = 64; // Safety limit
+
+                while (slot.hasStack() && craftAttempts < maxCraftAttempts) {
+                    craftAttempts++;
+                    ItemStack currentOutput = slot.getStack().copy();
+
+                    // Try to insert current output into player inventory
+                    if (!this.insertItem(currentOutput, playerInvStart, playerInvEnd, true)) {
+                        break; // Player inventory is full
+                    }
+
+                    // Successfully transferred, so consume the output and craft more
+                    slot.setStack(ItemStack.EMPTY);
+
+                    // Track what we've transferred for return value
+                    if (transferredStack.isEmpty()) {
+                        transferredStack = currentOutput.copy();
+                    } else {
+                        transferredStack.increment(currentOutput.getCount());
+                    }
+
+                    // Trigger crafting to refill output slot
+                    if (blockEntity.getWorld() != null && !blockEntity.getWorld().isClient) {
+                        if (!blockEntity.craftSingle()) {
+                            break; // No more materials to craft
+                        }
+                        blockEntity.updateOutputSlot();
+                    }
+                }
+
+                return transferredStack.isEmpty() ? ItemStack.EMPTY : transferredStack;
+            }
+
+            // Fallback for when blockEntity is null (shouldn't happen on server)
+            if (!this.insertItem(originalStack, playerInvStart, playerInvEnd, true)) {
+                return ItemStack.EMPTY;
+            }
+
+        } else if (index < customInvSize) {
+            // Move from block inventory to player inventory
+            if (!this.insertItem(originalStack, playerInvStart, playerInvEnd, true)) {
                 return ItemStack.EMPTY;
             }
         } else {
-            // Move from player inventory to custom input slots (0–7)
-            if (!this.insertItem(originalStack, 0, 8, false)) {
+            // Move from player inventory to input slots
+            if (!this.insertItem(originalStack, 0, INPUT_SLOTS, false)) {
                 return ItemStack.EMPTY;
             }
         }
@@ -169,7 +217,7 @@ public class SpellInscriberScreenHandler extends ScreenHandler {
             slot.markDirty();
         }
 
-        return newStack;
+        return stackCopy;
     }
 
     /**

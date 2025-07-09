@@ -2,8 +2,8 @@ package net.IneiTsuki.regen.magic.effect;
 
 import net.IneiTsuki.regen.magic.api.MagicEnums;
 import net.IneiTsuki.regen.magic.api.MagicEffect;
-import net.IneiTsuki.regen.magic.core.MagicConstants;
-import net.IneiTsuki.regen.magic.core.MagicInteractionRules;
+import net.IneiTsuki.regen.magic.core.constants.MagicConstants;
+import net.IneiTsuki.regen.magic.core.utils.MagicInteractionRules;
 import net.minecraft.block.Blocks;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
@@ -22,11 +22,11 @@ import java.util.Objects;
 
 /**
  * Collection of magic spell effects for the magic system.
- *
+ * <p>
  * This class contains implementations of various magical effects that can be
  * applied by magic scrolls. Each effect handles its own validation, applies
  * interaction rules, and provides appropriate feedback to the user.
- *
+ * <p>
  * All effects follow the MagicEffect interface contract and handle errors gracefully.
  */
 public final class MagicScrollEffects {
@@ -37,7 +37,7 @@ public final class MagicScrollEffects {
 
     /**
      * Fire spell effect that creates fire blocks and potentially damages entities.
-     *
+     * <p>
      * Clarification effects:
      * - AREA: Increases base radius
      * - MANY: Adds additional radius

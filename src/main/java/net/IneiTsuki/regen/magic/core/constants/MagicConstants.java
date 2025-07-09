@@ -56,6 +56,8 @@ public final class MagicConstants {
     public static final int DELAY_LITTLE_REDUCTION = -10; // subtracts 0.5s
     public static final int DELAY_SOME_MODIFIER = 0; // neutral
 
+    public static final int DEFAULT_MANA_COST = 10;
+
 
 
     private MagicConstants() {
