@@ -1,5 +1,7 @@
 package net.IneiTsuki.regen.magic.components;
 
+import net.IneiTsuki.regen.magic.core.scheduler.TickScheduler;
+import net.IneiTsuki.regen.magic.item.ManaRegenTask;
 import net.IneiTsuki.regen.magic.network.ManaSyncPacket;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.NbtCompound;
@@ -10,6 +12,8 @@ public class ManaComponentImpl implements ManaComponent {
     private int mana = 100;
     private int maxMana = 100;
     private final PlayerEntity player;
+
+    private boolean isRegenerating = false;
 
     public ManaComponentImpl(PlayerEntity player) {
         this.player = player;
@@ -22,7 +26,6 @@ public class ManaComponentImpl implements ManaComponent {
 
     @Override
     public void setMana(int mana) {
-        //System.out.println("[ManaComponentImpl] setMana called with: " + mana);
         int newMana = Math.max(0, Math.min(mana, maxMana));
         if (this.mana != newMana) {
             this.mana = newMana;
@@ -37,7 +40,6 @@ public class ManaComponentImpl implements ManaComponent {
 
     @Override
     public void setMaxMana(int maxMana) {
-        //System.out.println("[ManaComponentImpl] setMaxMana called with: " + maxMana);
         int newMaxMana = Math.max(0, maxMana);
         if (this.maxMana != newMaxMana) {
             this.maxMana = newMaxMana;
@@ -55,6 +57,12 @@ public class ManaComponentImpl implements ManaComponent {
     public void consumeMana(int amount) {
         if (hasEnoughMana(amount)) {
             setMana(this.mana - amount);
+
+            // ✅ Start regen loop only if not already running
+            if (this.mana < this.maxMana && !isRegenerating) {
+                setRegenerating(true);
+                TickScheduler.schedule(20, new ManaRegenTask(this, 2, 20));
+            }
         }
     }
 
@@ -65,11 +73,8 @@ public class ManaComponentImpl implements ManaComponent {
 
     @Override
     public void syncToClient() {
-        if (player.getWorld().isClient) return; // Only run on server side
-
+        if (player.getWorld().isClient) return;
         if (!(player instanceof ServerPlayerEntity serverPlayer)) return;
-
-        // Send your custom packet with current mana values
         ManaSyncPacket.sendToClient(serverPlayer, mana, maxMana);
     }
 
@@ -85,4 +90,12 @@ public class ManaComponentImpl implements ManaComponent {
         nbt.putInt("mana", this.mana);
         nbt.putInt("maxMana", this.maxMana);
     }
+
+    public boolean isRegenerating() {
+        return isRegenerating;
     }
+
+    public void setRegenerating(boolean regenerating) {
+        this.isRegenerating = regenerating;
+    }
+}
