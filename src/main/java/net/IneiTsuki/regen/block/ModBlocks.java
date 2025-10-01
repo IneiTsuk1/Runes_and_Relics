@@ -3,13 +3,16 @@ package net.IneiTsuki.regen.block;
 import net.IneiTsuki.regen.Regen;
 import net.IneiTsuki.regen.block.custom.SpellInscriberBlock;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
+import net.fabricmc.fabric.api.registry.StrippableBlockRegistry;
 import net.minecraft.block.AbstractBlock;
 import net.minecraft.block.Block;
+import net.minecraft.block.PillarBlock;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemGroups;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
+import net.minecraft.sound.BlockSoundGroup;
 import net.minecraft.util.Identifier;
 
 /**
@@ -22,6 +25,18 @@ public class ModBlocks {
      */
     public static final Block SPELL_INSCRIBER_BLOCK = registerBlock("spell_inscriber",
             new SpellInscriberBlock(AbstractBlock.Settings.create().nonOpaque()));
+
+    public static final Block FIRE_TREE_LOG = registerBlock("fire_tree_log",
+            new PillarBlock(AbstractBlock.Settings.create()
+                    .strength(2.0f)
+                    .requiresTool()
+                    .sounds(BlockSoundGroup.WOOD)));
+
+    public static final Block FIRE_TREE_LOG_STRIPPED = registerBlock("stripped_fire_tree_log",
+            new PillarBlock(AbstractBlock.Settings.create()
+                    .strength(2.0f)
+                    .requiresTool()
+                    .sounds(BlockSoundGroup.WOOD)));
 
     /**
      * Registers a block with the given name and returns it.
@@ -54,8 +69,12 @@ public class ModBlocks {
     public static void registerModBlocks() {
         Regen.LOGGER.info("Registering Mod Blocks for " + Regen.MOD_ID);
 
+        StrippableBlockRegistry.register(ModBlocks.FIRE_TREE_LOG, ModBlocks.FIRE_TREE_LOG_STRIPPED);
+
         ItemGroupEvents.modifyEntriesEvent(ItemGroups.BUILDING_BLOCKS).register(entries -> {
             entries.add(ModBlocks.SPELL_INSCRIBER_BLOCK);
+            entries.add(ModBlocks.FIRE_TREE_LOG);
+            entries.add(ModBlocks.FIRE_TREE_LOG_STRIPPED);
         });
     }
 }

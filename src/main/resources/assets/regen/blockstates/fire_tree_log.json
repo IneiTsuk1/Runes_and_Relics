@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "axis=y": { "model": "regen:block/fire_tree_log" },
+    "axis=x": { "model": "regen:block/fire_tree_log_horizontal", "x": 90, "y": 90 },
+    "axis=z": { "model": "regen:block/fire_tree_log_horizontal", "x": 90 }
+  }
+}

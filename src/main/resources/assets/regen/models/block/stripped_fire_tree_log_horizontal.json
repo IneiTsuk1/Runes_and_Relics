@@ -1,0 +1,7 @@
+{
+  "parent": "block/cube_column_horizontal",
+  "textures": {
+    "end": "regen:block/fire_tree_log/stripped_fire_tree_log_top",
+    "side": "regen:block/fire_tree_log/stripped_fire_tree_log"
+  }
+}
